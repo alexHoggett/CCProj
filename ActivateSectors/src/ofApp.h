@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxMaxim.h"
 #include <math.h>
+#include "maxiMFCC.h"
 
 class ofApp : public ofBaseApp{
 
@@ -22,13 +23,19 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+        void audioReceived(float * input, int bufferSize, int nChannels); /* input method */
+        void audioRequested(float * input, int bufferSize, int nChannels); /* output method */
 		
         ofVec2f polarToCart(float angle, int radius);
         ofVec2f cartToPolar(float x, float y);
         ofVec2f whichBlock(float x, float y);
     
-        void audioReceived     (float * input, int bufferSize, int nChannels); /* input method */
-        void audioRequested     (float * input, int bufferSize, int nChannels); /* output method */
+        float * lAudioOut; /* outputs */
+        float * rAudioOut;
+        float * lAudioIn; /* inputs */
+        float * rAudioIn;
+        int initialBufferSize; /* buffer size */
+        int sampleRate;
     
         int height, width;
         int whichSectorIndex(float x, float y, int radius);
@@ -39,16 +46,7 @@ class ofApp : public ofBaseApp{
         int columns;
         int blocks [16][12];
     
-        //  Maxim stuff
-        float   * lAudioOut; /* outputs */
-        float   * rAudioOut;
-    
-        float * lAudioIn; /* inputs */
-        float * rAudioIn;
-    
-        int        initialBufferSize; /* buffer size */
-        int        sampleRate;
-    
+        //MAXIMILIAN STUFF:
         double wave,sample,outputs[2], ifftVal;
         maxiMix mymix;
         maxiOsc osc;
@@ -74,4 +72,5 @@ class ofApp : public ofBaseApp{
         double *mfccs;
     
         maxiSample samp;
+        ofPolyline line;
 };

@@ -79,14 +79,12 @@ void ofApp::setup(){
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
     
-    // set up audio things
     sampleRate             = 44100; /* Sampling Rate */
     initialBufferSize    = 512;    /* Buffer Size. you have to fill this buffer with sound*/
     lAudioOut            = new float[initialBufferSize];/* outputs */
     rAudioOut            = new float[initialBufferSize];
     lAudioIn            = new float[initialBufferSize];/* inputs */
     rAudioIn            = new float[initialBufferSize];
-    
     
     /* This is a nice safe piece of code */
     memset(lAudioOut, 0, initialBufferSize * sizeof(float));
@@ -117,56 +115,61 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofNoFill();
-    ofSetColor(0, 255, 0);
-    float horizWidth = 500.;
-    float horizOffset = 100;
+//    ofNoFill();
+//    ofSetColor(0, 255, 0);
+//
+//    int radius = 700;
+//
+//    ofDrawCircle(width/2, height/2, radius);
+//
+//    // draw sectors
+//    for (int i = 0; i < 12; i++){
+//        ofSetColor(0, 255, 0);
+//        ofVec2f edge = polarToCart(angles[i] - PI/2, radius);
+//
+//        // x & y values from the centre of circle
+//        float x = edge.x + width/2;
+//        float y = edge.y + height/2;
+//
+//        ofDrawLine(width/2, height/2, x, y);
+//    }
+//
+//    ofVec2f mouse = whichBlock(ofGetMouseX(), ofGetMouseY());
+//    cout << whichSectorIndex(ofGetMouseX(), ofGetMouseY(), radius) << endl;
+//
+//    // draw rects
+//    for (int i = 0; i < 16; i++){
+//        for (int j = 0; j < 12; j++){
+//            // highlight box where mouse is
+//            if (mouse.x == i && mouse.y == j){
+//                ofFill();
+//            } else {
+//                ofNoFill();
+//            }
+//            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
+//        }
+//    }
+
+    // Draw spectrum
+    ofTranslate(0, ofGetHeight()/2);
+    // Spread the bins over the width of the window
+    float binWidth = ofGetWidth()/mfft.bins;
+    // Horizontal line
+    ofDrawLine(0, 0, ofGetWidth(), 0);
     
-    int radius = 700;
-    
-    ofDrawCircle(width/2, height/2, radius);
-    
-    // draw sectors
-    for (int i = 0; i < 12; i++){
-        ofSetColor(0, 255, 0);
-        ofVec2f edge = polarToCart(angles[i] - PI/2, radius);
-        
-        // x & y values from the centre of circle
-        float x = edge.x + width/2;
-        float y = edge.y + height/2;
-    
-        ofDrawLine(width/2, height/2, x, y);
+
+    // one line per bin
+    for(int i = 0; i < mfft.bins; ++i) {
+        ofPoint pt;
+        pt.set(i*binWidth, mfft.magnitudes[i] * -5.);
+        line.addVertex(pt);
     }
-    
-    ofVec2f mouse = whichBlock(ofGetMouseX(), ofGetMouseY());
-    
-    // draw rects
-    for (int i = 0; i < 16; i++){
-        for (int j = 0; j < 12; j++){
-            // highlight box where mouse is
-            if (mouse.x == i && mouse.y == j){
-                ofFill();
-            } else {
-                ofNoFill();
-            }
-            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
-        }
-    }
-    
-    //draw fft output
-    ofFill();
-    float xinc = horizWidth / fftSize * 2.0;
-    for(int i=0; i < fftSize / 2; i++) {
-        //magnitudesDB took out
-        float height = mfft.magnitudes[i] * 100;
-        ofDrawRectangle(horizOffset + (i*xinc),250 - height,2, height);
-    }
+    line.end();
+    line.draw();
 }
 
 //--------------------------------------------------------------
-void ofApp::audioReceived     (float * input, int bufferSize, int nChannels){
-    
-    
+void ofApp::audioReceived(float * input, int bufferSize, int nChannels){
     /* You can just grab this input and stick it in a double, then use it above to create output*/
     
     float sum = 0;
@@ -181,11 +184,10 @@ void ofApp::audioReceived     (float * input, int bufferSize, int nChannels){
         
     }
     RMS = sqrt(sum);
-    
 }
 
 //--------------------------------------------------------------
-void ofApp::audioRequested     (float * output, int bufferSize, int nChannels){
+void ofApp::audioRequested(float * output, int bufferSize, int nChannels){
     //    static double tm;
     
     

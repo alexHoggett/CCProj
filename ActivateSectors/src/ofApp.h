@@ -4,6 +4,7 @@
 #include "ofxMaxim.h"
 #include <math.h>
 #include "maxiMFCC.h"
+#include "chordspot.hpp"
 
 class ofApp : public ofBaseApp{
 

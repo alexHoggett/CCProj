@@ -79,21 +79,20 @@ void ofApp::setup(){
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
     
-    sampleRate             = 44100; /* Sampling Rate */
-    initialBufferSize    = 512;    /* Buffer Size. you have to fill this buffer with sound*/
+    sampleRate = 44100; // Sampling Rate
+    initialBufferSize = 512; // Buffer Size. you have to fill this buffer with sound
     lAudioOut            = new float[initialBufferSize];/* outputs */
     rAudioOut            = new float[initialBufferSize];
     lAudioIn            = new float[initialBufferSize];/* inputs */
     rAudioIn            = new float[initialBufferSize];
     
-    /* This is a nice safe piece of code */
+    // This is a nice safe piece of code
     memset(lAudioOut, 0, initialBufferSize * sizeof(float));
     memset(rAudioOut, 0, initialBufferSize * sizeof(float));
-    
     memset(lAudioIn, 0, initialBufferSize * sizeof(float));
     memset(rAudioIn, 0, initialBufferSize * sizeof(float));
     
-    fftSize = 1024;
+    fftSize = 1024*4;
     mfft.setup(fftSize, 512, 256);
     ifft.setup(fftSize, 512, 256);
     
@@ -104,7 +103,7 @@ void ofApp::setup(){
     mfcc.setup(512, 42, 13, 20, 20000, sampleRate);
     
     ofxMaxiSettings::setup(sampleRate, 2, initialBufferSize);
-    ofSoundStreamSetup(2,2, this, sampleRate, initialBufferSize, 4);/* Call this last ! */
+    ofSoundStreamSetup(2,2, this, sampleRate, initialBufferSize, 4);
 }
 
 //--------------------------------------------------------------
@@ -115,57 +114,59 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-//    ofNoFill();
-//    ofSetColor(0, 255, 0);
-//
-//    int radius = 700;
-//
-//    ofDrawCircle(width/2, height/2, radius);
-//
-//    // draw sectors
-//    for (int i = 0; i < 12; i++){
-//        ofSetColor(0, 255, 0);
-//        ofVec2f edge = polarToCart(angles[i] - PI/2, radius);
-//
-//        // x & y values from the centre of circle
-//        float x = edge.x + width/2;
-//        float y = edge.y + height/2;
-//
-//        ofDrawLine(width/2, height/2, x, y);
-//    }
-//
-//    ofVec2f mouse = whichBlock(ofGetMouseX(), ofGetMouseY());
-//    cout << whichSectorIndex(ofGetMouseX(), ofGetMouseY(), radius) << endl;
-//
-//    // draw rects
-//    for (int i = 0; i < 16; i++){
-//        for (int j = 0; j < 12; j++){
-//            // highlight box where mouse is
-//            if (mouse.x == i && mouse.y == j){
-//                ofFill();
-//            } else {
-//                ofNoFill();
-//            }
-//            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
-//        }
-//    }
+    ofNoFill();
+    ofSetColor(0, 255, 0);
+
+    int radius = 700;
+
+    ofDrawCircle(width/2, height/2, radius);
+
+    // draw sectors
+    for (int i = 0; i < 12; i++){
+        ofSetColor(0, 255, 0);
+        ofVec2f edge = polarToCart(angles[i] - PI/2, radius);
+
+        // x & y values from the centre of circle
+        float x = edge.x + width/2;
+        float y = edge.y + height/2;
+
+        ofDrawLine(width/2, height/2, x, y);
+    }
+
+    ofVec2f mouse = whichBlock(ofGetMouseX(), ofGetMouseY());
+
+    // draw rects
+    for (int i = 0; i < 16; i++){
+        for (int j = 0; j < 12; j++){
+            // highlight box where mouse is
+            if (mouse.x == i && mouse.y == j){
+                ofFill();
+            } else {
+                ofNoFill();
+            }
+            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
+        }
+    }
 
     // Draw spectrum
-    ofTranslate(0, ofGetHeight()/2);
-    // Spread the bins over the width of the window
-    float binWidth = ofGetWidth()/mfft.bins;
-    // Horizontal line
-    ofDrawLine(0, 0, ofGetWidth(), 0);
+    float horizWidth = 500.;
+    float horizOffset = 100;
+    float fftTop = 250;
+    float mfccTop = 350;
+    float chromagramTop = 450;
     
-
-    // one line per bin
-    for(int i = 0; i < mfft.bins; ++i) {
-        ofPoint pt;
-        pt.set(i*binWidth, mfft.magnitudes[i] * -5.);
-        line.addVertex(pt);
+    ofSetColor(255, 0, 0, 255);
+    
+    //draw fft output
+    float xinc = horizWidth / fftSize * 2.0;
+    for(int i=0; i < fftSize / 2; i++) {
+        //magnitudesDB took out
+        float height = mfft.magnitudes[i] * 100;
+        ofRect(horizOffset + (i*xinc),250 - height,2, height);
     }
-    line.end();
-    line.draw();
+    
+    cout << "bin 40: " << mfft.magnitudes[40] << endl;
+    cout << "bin 41: " << mfft.magnitudes[41] << endl;
 }
 
 //--------------------------------------------------------------

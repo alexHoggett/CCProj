@@ -1,10 +1,9 @@
 #include "chordspot.hpp"
-#include <string>
-#include <iostream>
 using namespace std;
 
 ChordSpot::ChordSpot(){
-    
+    chordPred = "";
+    topNotes = {0, 0, 0};
 }
 //--------------------------------------------------------------
 // Function with 2 parameters: a base frequency & the number of octaves,
@@ -70,7 +69,7 @@ vector<float> ChordSpot::fftFreqs(int fftSize, int sampleRate){
 }
 //--------------------------------------------------------------
 // Calculate what chord this corresponds to
-string ChordSpot::returnChord(int fftSize, int sampleRate, int octaves, vector<float> bins){
+void ChordSpot::analyse(int fftSize, int sampleRate, int octaves, vector<float> bins){
     int maxBin = 0;
     float maxMag = 0;
     float maxFreq = 0;
@@ -120,38 +119,42 @@ string ChordSpot::returnChord(int fftSize, int sampleRate, int octaves, vector<f
     
     // create a vector to store the results and find the top 3 occuring notes
     vector<float> chroma = {C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B};
-    vector<int> notes = top3(chroma);
+    topNotes = top3(chroma);
     
     // create a prediction vector for the chord
     std::vector<int> prediction = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    for(int i = 0; i < notes.size(); i++){
-        prediction[notes[i]] =  1;
+    for(int i = 0; i < topNotes.size(); i++){
+        prediction[topNotes[i]] =  1;
     }
-        
+    
     for(int i = 0; i < prediction.size(); i++){
         cout << prediction[i] << " ";
     }
     cout << endl;
     
-    string result;
-    
     if(prediction == CMaj){
-        result = "C";
+        chordPred = "C";
     } else if(prediction == DMaj){
-        result = "D";
+        chordPred = "D";
     } else if(prediction == EMaj){
-        result = "E";
+        chordPred = "E";
     } else if(prediction == FMaj){
-        result = "F";
+        chordPred = "F";
     } else if(prediction == GMaj){
-        result = "G";
+        chordPred = "G";
     } else if(prediction == AMaj){
-        result = "A";
+        chordPred = "A";
     } else if(prediction == BMaj){
-        result = "B";
+        chordPred = "B";
     } else{
-        result =  "Sorry that chord could not be found";
+        chordPred =  "Sorry that chord could not be found";
     }
-    
-    return result;
+}
+//--------------------------------------------------------------
+string ChordSpot::returnChord(){
+    return chordPred;
+}
+//--------------------------------------------------------------
+vector<int> ChordSpot::returnTopNotes(){
+    return topNotes;
 }

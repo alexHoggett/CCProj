@@ -5,6 +5,7 @@
 #include <math.h>
 #include "maxiMFCC.h"
 #include "chordspot.hpp"
+#define SNIPPET_LENGTH 44032 // ~1, must be multiple of buffer size
 
 class ofApp : public ofBaseApp{
 
@@ -15,17 +16,11 @@ class ofApp : public ofBaseApp{
 
 		void keyPressed(int key);
 		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-        void audioReceived(float * input, int bufferSize, int nChannels); /* input method */
-        void audioRequested(float * input, int bufferSize, int nChannels); /* output method */
+        void audioReceived(float * input, int bufferSize, int nChannels); // input method
+        void audioRequested(float * input, int bufferSize, int nChannels); // output method
 		
         ofVec2f polarToCart(float angle, int radius);
         ofVec2f cartToPolar(float x, float y);
@@ -37,6 +32,7 @@ class ofApp : public ofBaseApp{
         float * rAudioIn;
         int initialBufferSize; /* buffer size */
         int sampleRate;
+        bool triggerFFT;
     
         int height, width;
         int whichSectorIndex(float x, float y, int radius);
@@ -46,23 +42,27 @@ class ofApp : public ofBaseApp{
         int rows;
         int columns;
         int blocks [16][12];
+        bool analyse;
+        ChordSpot chordSpotter;
+    
+    
+    
     
         //MAXIMILIAN STUFF:
         double wave,sample,outputs[2], ifftVal;
+        float snippet [SNIPPET_LENGTH] = {0};
+        int snippetBufferOffset;
         maxiMix mymix;
         maxiOsc osc;
     
         ofxMaxiFFTOctaveAnalyzer oct;
         int nAverages;
-        float *ifftOutput;
-        int ifftSize;
     
         float peakFreq = 0;
         float centroid = 0;
         float RMS = 0;
     
-        ofxMaxiIFFT ifft;
-        ofxMaxiFFT mfft;
+        ofxMaxiFFT myFFT;
         int fftSize;
         int bins, dataSize;
     

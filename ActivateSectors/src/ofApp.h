@@ -5,11 +5,12 @@
 #include <math.h>
 #include "maxiMFCC.h"
 #include "chordspot.hpp"
-#define SNIPPET_LENGTH 44032 // ~1, must be multiple of buffer size
+#define SNIPPET_LENGTH 44032 * 1// ~1, must be multiple of buffer size
 
 class ofApp : public ofBaseApp{
 
 	public:
+        ~ofApp();
 		void setup();
 		void update();
 		void draw();
@@ -26,13 +27,14 @@ class ofApp : public ofBaseApp{
         ofVec2f cartToPolar(float x, float y);
         ofVec2f whichBlock(float x, float y);
     
-        float * lAudioOut; /* outputs */
+        float * lAudioOut;
         float * rAudioOut;
-        float * lAudioIn; /* inputs */
+        float * lAudioIn;
         float * rAudioIn;
-        int initialBufferSize; /* buffer size */
+        int initialBufferSize;
         int sampleRate;
         bool triggerFFT;
+        bool recording;
     
         int height, width;
         int whichSectorIndex(float x, float y, int radius);
@@ -44,9 +46,6 @@ class ofApp : public ofBaseApp{
         int blocks [16][12];
         bool analyse;
         ChordSpot chordSpotter;
-    
-    
-    
     
         //MAXIMILIAN STUFF:
         double wave,sample,outputs[2], ifftVal;
@@ -72,6 +71,5 @@ class ofApp : public ofBaseApp{
         maxiMFCC mfcc;
         double *mfccs;
     
-        maxiSample samp;
-        ofPolyline line;
+        blackmanHarrisWinFunctor blackManWin;
 };

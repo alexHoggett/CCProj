@@ -17,11 +17,10 @@ public:
     vector<int> returnTopNotes();
     
 private:
-    // Private functions
     vector<int> top3(vector<float> chroma);
     vector<float> fftFreqs(int fftSize, int sampleRate);
     float octaveSum(float baseFreq, int numOctaves, int smapleRate, vector<float> bins, int fftSize);
-    
+
     string chordPred;
     vector<int> topNotes;
     
@@ -35,8 +34,6 @@ private:
     vector<int> GMaj = {0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1}; // checked
     vector<int> AMaj = {0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0}; // checked
     vector<int> BMaj = {0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1}; // checked
-    
-    vector<float> currentFreqs;
     
 };
 

@@ -73,7 +73,7 @@ void ChordSpot::analyse(int fftSize, int sampleRate, int octaves, vector<float> 
     int maxBin = 0;
     float maxMag = 0;
     float maxFreq = 0;
-    currentFreqs = fftFreqs(fftSize, sampleRate);
+    vector<float> currentFreqs = fftFreqs(fftSize, sampleRate);
     
     //find max frequency bin
     for(int i = 0; i < bins.size(); ++i){

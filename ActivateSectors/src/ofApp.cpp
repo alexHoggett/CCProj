@@ -18,8 +18,8 @@ void ofApp::setup(){
     memset(lAudioIn, 0, initialBufferSize * sizeof(float));
     memset(rAudioIn, 0, initialBufferSize * sizeof(float));
     
-    fftSize = 1024*4;
-    myFFT.setup(fftSize, 512*4, 256);
+    fftSize = 1024*16;
+    myFFT.setup(fftSize, 8192, 256);
     
     nAverages = 12;
     oct.setup(sampleRate, fftSize/2, nAverages);
@@ -41,11 +41,10 @@ void ofApp::update(){
     height = ofGetWindowHeight();
     
     if(snippetBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
-        triggerFFT = false;
+        triggerFFT = true;
+        recording = false;
         snippetBufferOffset = 0;
     }
-    
-    cout << triggerFFT << endl;
 }
 
 //--------------------------------------------------------------
@@ -81,19 +80,19 @@ void ofApp::draw(){
     }
 
     // Draw spectrum
-    float horizWidth = 500.;
+    float horizWidth = width;
     float horizOffset = 100;
     float fftTop = 250;
     float mfccTop = 350;
     float chromagramTop = 450;
     
     ofSetColor(255, 0, 0, 255);
-    vector <float> bins;
     
     // FFT IMPLEMENTATION
-    if (!triggerFFT){
+    // we only run the FFT when 'recording' has stopped
+    if (triggerFFT){
         for (int i = 0; i < SNIPPET_LENGTH - initialBufferSize; i++){
-            wave = snippet[i];
+            wave = snippet[i]; //* blackManWin.operator()(SNIPPET_LENGTH, i);
             // get fft
             if (myFFT.process(wave)){
                 myFFT.magsToDB();
@@ -116,32 +115,38 @@ void ofApp::draw(){
                 mfcc.mfcc(myFFT.magnitudes, mfccs);
             }
         }
+        // quickly convert the array of bins to a vector
+//        int n = sizeof(myFFT.magnitudes) / sizeof(myFFT.magnitudes[0]);
+//        vector <float> bins(myFFT.magnitudes, myFFT.magnitudes + n);
+        vector <float> bins;
+        for (int i = 0; i < myFFT.bins; i++){
+            bins.push_back(myFFT.magnitudes[i]);
+        }
+        cout << bins.size() << endl;
+        
+        chordSpotter.analyse(fftSize, sampleRate, 8, bins);
+        
+        string pred = chordSpotter.returnChord();
+        cout << pred << endl;
+        triggerFFT = false;
     }
     
     // Draw fft output
     float xinc = horizWidth / fftSize * 2.0;
+    int drawFreq = 0;
     for(int i=0; i < fftSize / 2; i++) {
         // scale the values so they're more visible
         float height = myFFT.magnitudes[i] * 100;
-        ofRect(horizOffset + (i*xinc),250 - height,2, height);
-        
-        // We will have to convert the magnitudes values, which are pointers, into a vector
-        // to be used later
-        bins.push_back(myFFT.magnitudes[i]);
+        if (i % 10 == 0){
+            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+        }
     }
-    
-    //chordSpotter.analyse(fftSize, sampleRate, 6, bins);
-    
-    //string pred = chordSpotter.returnChord();
-    
-    //cout << pred << endl;
     
     // We can use the RMS to trigger an analysis of what was just played
-    if (RMS > 2 && !triggerFFT){
-        triggerFFT = true;
+    if (RMS > 1 && !recording){
+        recording = true;
     }
 }
-
 //--------------------------------------------------------------
 void ofApp::audioReceived(float * input, int bufferSize, int nChannels){
     // You can just grab this input and stick it in a double
@@ -149,7 +154,7 @@ void ofApp::audioReceived(float * input, int bufferSize, int nChannels){
     
     float sum = 0;
     
-    if (triggerFFT){
+    if (recording){
         // begin filling the audio snippet
         for (int i = 0; i < bufferSize; i++){
             snippet[i + snippetBufferOffset*bufferSize] = input[i];

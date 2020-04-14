@@ -31,7 +31,7 @@ class LineGen{
         void run();
     
     private:
-        vector <line> lines;
+        vector <line*> lines;
         void killLine(int index);
         // settings for brush effect
         int maxRadius = 100;  // Increase for a wider brush

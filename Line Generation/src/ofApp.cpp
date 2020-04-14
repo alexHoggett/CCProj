@@ -82,7 +82,7 @@ void ofApp::draw(){
         lineGen->addLine({60, 60}, {120, 400}, {400, 70}, {500, 90}, 100);
         cout << "FIRST" << endl;
     }
-    if (counter == 300){
+    if (counter == 150){
         lineGen->addLine({120, 300}, {120, 500}, {120, 70}, {150, 90}, 100);
         cout << "SECOND" << endl;
     }

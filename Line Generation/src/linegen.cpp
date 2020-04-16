@@ -26,10 +26,11 @@ void LineGen::killLine(int index){
 }
 
 void LineGen::run(){
-    for(int i = 0; i < lines.size(); i++){
+    for(int i = 0; i < this->lines.size(); i++){
         ofFill();
         line * currentLine = this->lines[i];
-        float currentPoint = currentLine->currentFrame / currentLine->totalFrames;
+        float currentPoint = (float)currentLine->currentFrame / (float)currentLine->totalFrames;
+        cout << currentPoint << endl;
         int currentX = ofInterpolateCatmullRom(currentLine->control1.x, currentLine->start.x, currentLine->end.x, currentLine->control2.x, currentPoint);
         int currentY = ofInterpolateCatmullRom(currentLine->control1.y, currentLine->start.y, currentLine->end.y, currentLine->control2.y, currentPoint);
         float noiseX = ofNoise(currentX, currentY)*2. - 1.;

@@ -30,16 +30,14 @@ void LineGen::run(){
         ofFill();
         line * currentLine = this->lines[i];
         float currentPoint = (float)currentLine->currentFrame / (float)currentLine->totalFrames;
-        cout << currentPoint << endl;
         int currentX = ofInterpolateCatmullRom(currentLine->control1.x, currentLine->start.x, currentLine->end.x, currentLine->control2.x, currentPoint);
         int currentY = ofInterpolateCatmullRom(currentLine->control1.y, currentLine->start.y, currentLine->end.y, currentLine->control2.y, currentPoint);
-        float noiseX = ofNoise(currentX, currentY)*2. - 1.;
+        float noiseX = ofNoise(currentX * 0.01, currentY * 0.01) * 2. - 1.;
         // float noiseY = ofNoise(currentY)*2. - 1.;
-        currentX += noiseX * 5; // change the int to be at a ratio of the total number of frames
+        currentX += noiseX * 10;
         // currentY += noiseY*100;
         ofSetColor(255, 0, 0);
         
-        cout << currentX << " " << currentY << endl;
         ofDrawEllipse(currentX, currentY, 10, 10);
         
         this->lines[i]->currentFrame++;

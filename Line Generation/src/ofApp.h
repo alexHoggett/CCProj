@@ -28,15 +28,5 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
         bool refresh;
-    
-        //Variables for moving curve
-        xyPoint keyFrame1;
-        xyPoint keyFrame2;
-        xyPoint controlPoint1;
-        xyPoint controlPoint2;
-        int frameCount;
-    
         LineGen* lineGen;
-    
-        int counter = 0;
 };

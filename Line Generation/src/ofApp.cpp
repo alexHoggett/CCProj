@@ -6,25 +6,12 @@ void ofApp::setup(){
     ofBackground(0);
     ofEnableAlphaBlending();
     ofSetBackgroundAuto(refresh);
-    
-    //initialize our points
-    keyFrame1.x = 50;
-    keyFrame1.y = 50;
-    
-    //This syntax works, too:
-    keyFrame2 = { 400, 400 };
-    controlPoint1 = { 600, 50 };
-    controlPoint2 = { 400, 100 };
-    
     lineGen = new LineGen();
-    
-    //start from frame 0
-    frameCount = 0;
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    counter++;
+    
 }
 
 //--------------------------------------------------------------

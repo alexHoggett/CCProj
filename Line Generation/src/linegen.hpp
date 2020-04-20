@@ -11,11 +11,13 @@
 #include "ofMain.h"
 
 class LineGen{
+    // to specify points in 2d space
     struct xyPoint {
         int x;
         int y;
     };
     
+    // properties contained for each line
     struct line{
         xyPoint start;
         xyPoint end;
@@ -27,18 +29,18 @@ class LineGen{
     
     public:
         LineGen();
+        // add a single line to be drawn
         void addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames);
+        // to be ran every frame, calculates the next point to be drawn for every line in the vector array
         void run();
     
     private:
+        // to store all the lines
         vector <line*> lines;
+        // to delete them from the vector
         void killLine(int index);
-        // settings for brush effect
-        int maxRadius = 100;  // Increase for a wider brush
-        int radiusStepSize = 3;  // Decrease for more circles (i.e. a more opaque brush)
-        int alpha = 3;  // Increase for a more opaque brush
-        int maxOffsetDistance = 100;  // Increase for a larger spread of circles
-        // draw smaller and smaller circles and layering (increasing) opaqueness
+        // allow draw to be overridden in inherited classed to allow for different 'drawing patterns'
+        virtual void draw(int x, int y);
 };
 
 #endif /* linegen_hpp */

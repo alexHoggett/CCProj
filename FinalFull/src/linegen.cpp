@@ -10,7 +10,7 @@ LineGen::LineGen(){
     // empty constructor
 }
 
-void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames){
+void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient){
     // add a new line to the vector array
     line * newLine = new line;
     newLine->start = start;
@@ -19,12 +19,18 @@ void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint cont
     newLine->control2 = control2;
     newLine->currentFrame = 0;
     newLine->totalFrames = totalFrames;
+    newLine->squiggle = squiggle;
+    newLine->orient = orient;
     this->lines.push_back(newLine);
 }
 
-void LineGen::killLine(int index){
+void LineGen::killLine(int &index){
     // remove a dead line from the vector
     this->lines.erase(lines.begin() + (index - 1));
+}
+
+void LineGen::squiggleLine(int &index){
+    this->lines[index]->squiggle = true;
 }
 
 void LineGen::run(){
@@ -38,11 +44,24 @@ void LineGen::run(){
         int currentY = ofInterpolateCatmullRom(currentLine->control1.y, currentLine->start.y, currentLine->end.y, currentLine->control2.y, currentPoint);
         // add perlin noise in the X axis to slightly offset the line but with continuity
         if (currentLine->currentFrame >= 5){
-            float noiseX = ofNoise(currentX * 0.01, currentY * 0.01) * 2. - 1.;
-            // can also do this in the Y
-            // float noiseY = ofNoise(currentY) * 2. - 1.;
-            currentX += noiseX * 10;
-            // currentY += noiseY * 10;
+            float noiseX = 0;
+            float noiseY = 0;
+            
+            if (!currentLine->squiggle){
+                // draw as normal
+                noiseX = ofNoise(currentX * 0.01, currentY * 0.01) * 2. - 1.;
+                currentX += noiseX * 0.1;
+            } else {
+                // line is 'squiggly' so add more noise on a given axis
+                // orient is 0 - 1, 0 is vertical, 1 is horizontal
+                noiseX = ofNoise(currentX * 0.01, currentY * 0.01) * 2. - 1.;
+                noiseX *= currentLine->orient;
+                currentX += noiseX * 100;
+                
+                noiseY = ofNoise(currentX * 0.01, currentY * 0.01) * 2. - 1.;
+                noiseY *= 1 - currentLine->orient;
+                currentY += noiseY * 100;
+            }
         }
         
         ofSetColor(255, 0, 0);
@@ -74,8 +93,4 @@ void LineGen::changeLine(int index, xyPoint end, xyPoint control1, xyPoint contr
     this->lines[index]->control1 = control1;
     this->lines[index]->control2 = control2;
     this->lines[index]->currentFrame = 0;
-}
-
-void LineGen::clearLines(){
-    this->lines.clear();
 }

@@ -10,13 +10,13 @@
 #include <stdio.h>
 #include "ofMain.h"
 
+// to specify points in 2d space
+struct xyPoint {
+    int x;
+    int y;
+};
+
 class LineGen{
-    // to specify points in 2d space
-    struct xyPoint {
-        int x;
-        int y;
-    };
-    
     // properties contained for each line
     struct line{
         xyPoint start;
@@ -33,10 +33,11 @@ class LineGen{
     public:
         LineGen();
         // add a single line to be drawn
-    void addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient);
+        void addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient);
         // to be ran every frame, calculates the next point to be drawn for every line in the vector array
         void run();
         void changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2);
+        void clearAll();
         void squiggleLine(int &index);
     
     private:

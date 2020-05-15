@@ -7,21 +7,17 @@
 #include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
-#define SNIPPET_LENGTH 10752// ~1/2s, must be multiple of buffer size
+#define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
-
-struct xyPoint{
-    int x;
-    int y;
-};
 
 struct snippet{
     float centroid;
     float peakFreq;
+    float rms;
+    bool drawing;
 };
 
 class ofApp : public ofBaseApp{
-
 	public:
         ~ofApp();
 		void setup();
@@ -31,6 +27,7 @@ class ofApp : public ofBaseApp{
         void audioIn(ofSoundBuffer& input); //input method
         ofSoundStream soundStream;
 		void keyPressed(int key);
+        void shiftSnippets(vector<snippet> snippets);
 		
         // For generating colours
         float hueValues [colourQuantity] = {0};
@@ -50,6 +47,7 @@ class ofApp : public ofBaseApp{
         int blocks [16][12];
     
         MistyBrush * misty;
+        LineGen * lineGen;
         vector<snippet> snippets;
         
         // for chord recognition
@@ -64,7 +62,7 @@ class ofApp : public ofBaseApp{
         int sampleRate;
         bool triggerFFT;
         bool recording;
-        bool analyse;
+        bool drawing;
         double wave,sample,outputs[2], ifftVal;
         float snippet [SNIPPET_LENGTH] = {0};
         int snippetBufferOffset;
@@ -77,7 +75,8 @@ class ofApp : public ofBaseApp{
     
         float peakFreq = 0;
         float centroid = 0;
-        float RMS = 0;
+        float RMS = 0; // to hold current rms
+        float rmsSum = 0; // to calc the average rms of an audio snippet
     
         ofxMaxiFFT myFFT;
         int fftSize;

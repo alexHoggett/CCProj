@@ -16,7 +16,7 @@ void ofApp::setup(){
     memset(rAudioIn, 0, initialBufferSize * sizeof(float));
     
     fftSize = 1024*4;
-    myFFT.setup(fftSize, 1024*2, 256);
+    myFFT.setup(fftSize, 1024*2, 512);
     
     nAverages = 12;
     oct.setup(sampleRate, fftSize/2, nAverages);
@@ -42,12 +42,15 @@ void ofApp::setup(){
     soundStream.start();
     
     // Initialising values
-    analyse = false;
     triggerFFT = false;
+    drawing = false;
     snippetBufferOffset = 0;
     playingBufferOffset = 0;
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
+    ofSetBackgroundAuto(false);
+    ofSetBackgroundColor(0, 0, 0);
+    lineGen = new LineGen;
 }
 
 //--------------------------------------------------------------
@@ -96,7 +99,7 @@ void ofApp::draw(){
 //            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
 //        }
 //    }
-
+    
     // Draw spectrum
     float horizWidth = width;
     float horizOffset = 100;
@@ -106,8 +109,14 @@ void ofApp::draw(){
     
     ofSetColor(255, 0, 0, 255);
     
+    float rmsThresh = 0.8;
+    // I use the RMS to trigger an analysis of what was just played
+    if (RMS > rmsThresh && !drawing){
+        drawing = true;
+    }
+    
     // FFT IMPLEMENTATION
-    // we only run the FFT when 'recording' has stopped
+    // only run the FFT at the end of the recording snippet
     if (triggerFFT){
         for (int i = 0; i < SNIPPET_LENGTH - initialBufferSize; i++){
             wave = snippet[i]; //* blackManWin.operator()(SNIPPET_LENGTH, i);
@@ -132,7 +141,7 @@ void ofApp::draw(){
                 mfcc.mfcc(myFFT.magnitudes, mfccs);
             }
         }
-        
+        cout << centroid << endl;
 //        // convert the array of bins to a vector
 //        vector <float> bins;
 //        for (int i = 0; i < myFFT.bins; i++){
@@ -142,54 +151,106 @@ void ofApp::draw(){
 //
 //        string pred = chordSpotter.returnChord();
 //        cout << pred << endl;
-        snippets.push_back({centroid, peakFreq});
-        triggerFFT = false;
-    }
-    
-    // Draw fft output
-    float xinc = horizWidth / fftSize * 2.0;
-    int drawFreq = 0;
-    for(int i=0; i < fftSize / 2; i++) {
-        // scale the values so they're more visible
-        float height = myFFT.magnitudes[i] * 100;
-        if (i % 10 == 0){
-            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+        
+        // divide the sum of the rms's by the amount of buffers used to fill the snippet
+        float avgRMS = rmsSum / (SNIPPET_LENGTH/initialBufferSize);
+        
+        snippets.push_back({centroid, peakFreq, avgRMS, drawing});
+        
+        // if snippets vector reaches a certain size it is trimmed
+        int maxLength = 10;
+        if (snippets.size() > maxLength){
+            snippets.erase(snippets.begin());
         }
+        
+        if (drawing && snippets.size() > 2){
+            if (snippets[snippets.size() - 2].drawing == false){
+                // start drawing a new line
+                xyPoint startPoint = {};
+                if (centroid < 0.1){
+                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                } else {
+                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                }
+                
+                xyPoint endPoint = {};
+                if (centroid < 0.1){
+                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                } else {
+                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                }
+                
+                xyPoint control1 = {(int)ofRandom(width), (int)ofRandom(height)};
+                xyPoint control2= {(int)ofRandom(width), (int)ofRandom(height)};
+                
+                int totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+                bool squiggle = false;
+                float orient = ofRandom(1);
+                lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames, squiggle, orient);
+            }
+            
+            if (snippets[snippets.size() - 2].drawing == true){
+                // check if increasing or decreasing
+                int increase = 0;
+                int decrease = 0;
+                for (int i = 1; i < snippets.size(); i++){
+                    if (snippets[i].centroid > snippets[i - 1].centroid){
+                        decrease++;
+                    } else{
+                        increase++;
+                    }
+                }
+                if (increase > decrease){
+                    // pitch is increasing
+                    lineGen->changeLine(0, {600, 20}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                } else{
+                    lineGen->changeLine(0, {250, height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                }
+            }
+            
+            if (rmsSum < rmsThresh * 0.2){
+                drawing = false;
+                lineGen->clearAll();
+            }
+        }
+        
+        triggerFFT = false;
+        rmsSum = 0;
     }
     
-    // Draw octave analyser
-    ofSetColor(255, 0, 255, 200);
-    xinc = horizWidth / oct.nAverages;
-    for (int i = 0; i < oct.nAverages; i++) {
-        float height = oct.averages[i] / 20.0 * 100;
-        ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
-    }
+//    // Draw fft output
+//    float xinc = horizWidth / fftSize * 2.0;
+//    int drawFreq = 0;
+//    for(int i=0; i < fftSize / 2; i++) {
+//        // scale the values so they're more visible
+//        float height = myFFT.magnitudes[i] * 100;
+//        if (i % 10 == 0){
+//            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+//        }
+//    }
+//
+//    // Draw octave analyser
+//    ofSetColor(255, 0, 255, 200);
+//    xinc = horizWidth / oct.nAverages;
+//    for (int i = 0; i < oct.nAverages; i++) {
+//        float height = oct.averages[i] / 20.0 * 100;
+//        ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
+//    }
     
-    
-    // I use the RMS to trigger an analysis of what was just played
-    // cout << "RMS: " << RMS << endl;
-    if (RMS > 2 && !recording){
-        recording = true;
-    }
+    lineGen->run();
 }
 //--------------------------------------------------------------
 void ofApp::audioIn(ofSoundBuffer& input){
     
     float sum = 0;
-    
-    if (recording){
-        // begin filling the audio snippet
+        // fill the audio snippet
         for (int i = 0; i < input.getNumFrames(); i++){
-            snippet[i + snippetBufferOffset*input.getNumFrames()] = input[i];
-        }
-        snippetBufferOffset++;
-    } else {
-        for (int i = 0; i < input.getNumFrames(); i++){
+            snippet[i + snippetBufferOffset * input.getNumFrames()] = input[i];
             sum += input[i] * input[i];
         }
-        // sum /= input.getNumFrames();
+        snippetBufferOffset++;
         RMS = sqrt(sum);
-    }
+        rmsSum += RMS;
 }
 
 //--------------------------------------------------------------
@@ -280,14 +341,14 @@ ofVec2f ofApp::cartToPolar(float x, float y){
     // As y is taken from the top of the screen it must be inverted
     y *= -1;
     
-    polar.x = atan(y/x);
+    polar.x = atan(y / x);
     
     if (x < 0) {
-        polar.x += PI/2;
+        polar.x += PI / 2;
     } else {
         polar.x += 3 * PI / 2;
     }
     
-    polar.y = sqrt((x*x) + (y*y));
+    polar.y = sqrt((x * x) + (y * y));
     return polar;
 }

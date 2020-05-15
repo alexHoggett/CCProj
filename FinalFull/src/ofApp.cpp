@@ -7,10 +7,6 @@ ofApp::~ofApp(){
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    refresh = false;
-    ofSetBackgroundAuto(refresh);
-    misty = new MistyBrush();
-    
     // Audio set-up
     sampleRate = 44100;
     initialBufferSize = 512;
@@ -19,8 +15,8 @@ void ofApp::setup(){
     memset(lAudioIn, 0, initialBufferSize * sizeof(float));
     memset(rAudioIn, 0, initialBufferSize * sizeof(float));
     
-    fftSize = 1024*16;
-    myFFT.setup(fftSize, 1024*8, 256);
+    fftSize = 1024*4;
+    myFFT.setup(fftSize, 1024*2, 256);
     
     nAverages = 12;
     oct.setup(sampleRate, fftSize/2, nAverages);
@@ -127,7 +123,7 @@ void ofApp::draw(){
                 for (int i = 0; i < fftSize/2; i++) {
                     sum += myFFT.magnitudes[i];
                     if (myFFT.magnitudes[i] > maxFreq) {
-                        maxFreq=myFFT.magnitudes[i];
+                        maxFreq = myFFT.magnitudes[i];
                         maxBin = i;
                     }
                 }
@@ -137,24 +133,16 @@ void ofApp::draw(){
             }
         }
         
-        // convert the array of bins to a vector
-        vector <float> bins;
-        for (int i = 0; i < myFFT.bins; i++){
-            bins.push_back(myFFT.magnitudes[i]);
-        }
-        chordSpotter.analyse(fftSize, sampleRate, 8, bins);
-        
-        string pred = chordSpotter.returnChord();
-        cout << pred << endl;
-        
-        // Adding a line to draw
-        // starting position
-        int startX = (int)peakFreq % width;
-        int endX = width - startX;
-        int startY = ofLerp(0, height, peakFreq/100);
-        int endY = height - startY;
-        
-        misty->addLine({startX, startY}, {endX, endY}, {300 + ((int)peakFreq % 50), 400}, {200, 700}, 500);
+//        // convert the array of bins to a vector
+//        vector <float> bins;
+//        for (int i = 0; i < myFFT.bins; i++){
+//            bins.push_back(myFFT.magnitudes[i]);
+//        }
+//        chordSpotter.analyse(fftSize, sampleRate, 8, bins);
+//
+//        string pred = chordSpotter.returnChord();
+//        cout << pred << endl;
+        snippets.push_back({centroid, peakFreq});
         triggerFFT = false;
     }
     
@@ -177,7 +165,12 @@ void ofApp::draw(){
         ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
     }
     
-    misty->run();
+    
+    // I use the RMS to trigger an analysis of what was just played
+    // cout << "RMS: " << RMS << endl;
+    if (RMS > 2 && !recording){
+        recording = true;
+    }
 }
 //--------------------------------------------------------------
 void ofApp::audioIn(ofSoundBuffer& input){
@@ -190,19 +183,12 @@ void ofApp::audioIn(ofSoundBuffer& input){
             snippet[i + snippetBufferOffset*input.getNumFrames()] = input[i];
         }
         snippetBufferOffset++;
-    }
-    
-    for (int i = 0; i < input.getNumFrames(); i++){
-        lAudioIn[i] = input[i*2];
-        rAudioIn[i] = input[i*2+1];
-        
-        sum += input[i*2] * input[i*2];
+    } else {
+        for (int i = 0; i < input.getNumFrames(); i++){
+            sum += input[i] * input[i];
+        }
+        // sum /= input.getNumFrames();
         RMS = sqrt(sum);
-    }
-    
-    // We can use the RMS to trigger an analysis of what was just played
-    if (RMS > 3 && !recording){
-        recording = true;
     }
 }
 

@@ -7,12 +7,17 @@
 #include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
-#define SNIPPET_LENGTH 44032 * 1// ~1, must be multiple of buffer size
+#define SNIPPET_LENGTH 10752// ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
 
-struct xyPoint {
+struct xyPoint{
     int x;
     int y;
+};
+
+struct snippet{
+    float centroid;
+    float peakFreq;
 };
 
 class ofApp : public ofBaseApp{
@@ -45,7 +50,7 @@ class ofApp : public ofBaseApp{
         int blocks [16][12];
     
         MistyBrush * misty;
-        bool refresh;
+        vector<snippet> snippets;
         
         // for chord recognition
         ChordSpot chordSpotter;
@@ -65,7 +70,6 @@ class ofApp : public ofBaseApp{
         int snippetBufferOffset;
         int playingBufferOffset;
         bool isPlaying = false;
-        maxiMix mymix;
         maxiOsc osc;
     
         ofxMaxiFFTOctaveAnalyzer oct;
@@ -84,7 +88,4 @@ class ofApp : public ofBaseApp{
     
         maxiMFCC mfcc;
         double *mfccs;
-    
-        blackmanHarrisWinFunctor blackManWin;
-        
 };

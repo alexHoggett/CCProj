@@ -33,11 +33,18 @@ class LineGen{
     public:
         LineGen();
         // add a single line to be drawn
+<<<<<<< HEAD
         void addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient);
         // to be ran every frame, calculates the next point to be drawn for every line in the vector array
         void run();
         void changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2);
         void clearAll();
+=======
+    void addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient);
+        // to be ran every frame, calculates the next point to be drawn for every line in the vector array
+        void run();
+        void changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2);
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
         void squiggleLine(int &index);
     
     private:

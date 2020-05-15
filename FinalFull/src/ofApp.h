@@ -7,6 +7,7 @@
 #include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
+<<<<<<< HEAD
 #define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
 
@@ -15,6 +16,19 @@ struct snippet{
     float peakFreq;
     float rms;
     bool drawing;
+=======
+#define SNIPPET_LENGTH 10752// ~1/2s, must be multiple of buffer size
+#define colourQuantity 10
+
+struct xyPoint{
+    int x;
+    int y;
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
+};
+
+struct snippet{
+    float centroid;
+    float peakFreq;
 };
 
 class ofApp : public ofBaseApp{
@@ -47,7 +61,10 @@ class ofApp : public ofBaseApp{
         int blocks [16][12];
     
         MistyBrush * misty;
+<<<<<<< HEAD
         LineGen * lineGen;
+=======
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
         vector<snippet> snippets;
         
         // for chord recognition

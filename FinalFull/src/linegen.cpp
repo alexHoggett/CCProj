@@ -33,10 +33,13 @@ void LineGen::squiggleLine(int &index){
     this->lines[index]->squiggle = true;
 }
 
+<<<<<<< HEAD
 void LineGen::clearAll(){
     this->lines.clear();
 }
 
+=======
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
 void LineGen::run(){
     // manages each line
     for(int i = 0; i < this->lines.size(); i++){

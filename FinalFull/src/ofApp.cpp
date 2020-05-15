@@ -16,7 +16,11 @@ void ofApp::setup(){
     memset(rAudioIn, 0, initialBufferSize * sizeof(float));
     
     fftSize = 1024*4;
+<<<<<<< HEAD
     myFFT.setup(fftSize, 1024*2, 512);
+=======
+    myFFT.setup(fftSize, 1024*2, 256);
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
     
     nAverages = 12;
     oct.setup(sampleRate, fftSize/2, nAverages);
@@ -152,6 +156,7 @@ void ofApp::draw(){
 //        string pred = chordSpotter.returnChord();
 //        cout << pred << endl;
         
+<<<<<<< HEAD
         // divide the sum of the rms's by the amount of buffers used to fill the snippet
         float avgRMS = rmsSum / (SNIPPET_LENGTH/initialBufferSize);
         
@@ -212,6 +217,29 @@ void ofApp::draw(){
                 drawing = false;
                 lineGen->clearAll();
             }
+=======
+//        // convert the array of bins to a vector
+//        vector <float> bins;
+//        for (int i = 0; i < myFFT.bins; i++){
+//            bins.push_back(myFFT.magnitudes[i]);
+//        }
+//        chordSpotter.analyse(fftSize, sampleRate, 8, bins);
+//
+//        string pred = chordSpotter.returnChord();
+//        cout << pred << endl;
+        snippets.push_back({centroid, peakFreq});
+        triggerFFT = false;
+    }
+    
+    // Draw fft output
+    float xinc = horizWidth / fftSize * 2.0;
+    int drawFreq = 0;
+    for(int i=0; i < fftSize / 2; i++) {
+        // scale the values so they're more visible
+        float height = myFFT.magnitudes[i] * 100;
+        if (i % 10 == 0){
+            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
         }
         
         triggerFFT = false;
@@ -237,7 +265,16 @@ void ofApp::draw(){
 //        ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
 //    }
     
+<<<<<<< HEAD
     lineGen->run();
+=======
+    
+    // I use the RMS to trigger an analysis of what was just played
+    // cout << "RMS: " << RMS << endl;
+    if (RMS > 2 && !recording){
+        recording = true;
+    }
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
 }
 //--------------------------------------------------------------
 void ofApp::audioIn(ofSoundBuffer& input){
@@ -249,8 +286,18 @@ void ofApp::audioIn(ofSoundBuffer& input){
             sum += input[i] * input[i];
         }
         snippetBufferOffset++;
+<<<<<<< HEAD
         RMS = sqrt(sum);
         rmsSum += RMS;
+=======
+    } else {
+        for (int i = 0; i < input.getNumFrames(); i++){
+            sum += input[i] * input[i];
+        }
+        // sum /= input.getNumFrames();
+        RMS = sqrt(sum);
+    }
+>>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
 }
 
 //--------------------------------------------------------------

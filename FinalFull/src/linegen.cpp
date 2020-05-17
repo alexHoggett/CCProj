@@ -10,7 +10,7 @@ LineGen::LineGen(){
     // empty constructor
 }
 
-void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient){
+void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, bool squiggle, float orient, ofColor colour){
     // add a new line to the vector array
     line * newLine = new line;
     newLine->start = start;
@@ -21,6 +21,7 @@ void LineGen::addLine(xyPoint start, xyPoint end, xyPoint control1, xyPoint cont
     newLine->totalFrames = totalFrames;
     newLine->squiggle = squiggle;
     newLine->orient = orient;
+    newLine->colour = colour;
     this->lines.push_back(newLine);
 }
 
@@ -33,13 +34,10 @@ void LineGen::squiggleLine(int &index){
     this->lines[index]->squiggle = true;
 }
 
-<<<<<<< HEAD
 void LineGen::clearAll(){
     this->lines.clear();
 }
 
-=======
->>>>>>> 9dcc26f1811bbe9c9118c53abd978bc40b235f71
 void LineGen::run(){
     // manages each line
     for(int i = 0; i < this->lines.size(); i++){
@@ -71,7 +69,8 @@ void LineGen::run(){
             }
         }
         
-        ofSetColor(255, 0, 0);
+        ofSetColor(currentLine->colour);
+        cout << currentLine->colour << endl;
         
         // stored current position so that we can change direction from last drawn point
         this->lines[i]->currentPos = {currentX, currentY};

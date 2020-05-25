@@ -70,7 +70,6 @@ void LineGen::run(){
         }
         
         ofSetColor(currentLine->colour);
-        cout << currentLine->colour << endl;
         
         // stored current position so that we can change direction from last drawn point
         this->lines[i]->currentPos = {currentX, currentY};

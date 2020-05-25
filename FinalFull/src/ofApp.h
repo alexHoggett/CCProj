@@ -7,6 +7,7 @@
 #include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
+#include <algorithm>
 #define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
 
@@ -38,6 +39,7 @@ class ofApp : public ofBaseApp{
         ofVec2f polarToCart(float angle, int radius);
         ofVec2f cartToPolar(float x, float y);
         ofVec2f whichBlock(float x, float y);
+        bool occurenceCheck(vector <int> &freqs, int thresh); // returns true if there are over a certain number of occurences of any element, roughly checking for consistency
     
         float angles [12] = {PI/6, PI/3, PI/2, PI*2/3, PI*5/6, PI, PI*7/6, PI*4/3, PI*3/2, PI*5/3, PI*11/6, 2*PI};
         int height, width;
@@ -49,7 +51,8 @@ class ofApp : public ofBaseApp{
         MistyBrush * misty;
         LineGen * lineGen;
         vector<snippet> snippets;
-        
+        int snippetsCounter;
+    
         // for chord recognition
         ChordSpot chordSpotter;
     

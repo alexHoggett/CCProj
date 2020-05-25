@@ -48,7 +48,7 @@ void ofApp::setup(){
     playingBufferOffset = 0;
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
-    ofSetBackgroundAuto(false);
+    ofSetBackgroundAuto(true);
     ofSetBackgroundColor(0, 0, 0);
     
     for(int i = 0; i < colourQuantity; i++){
@@ -64,6 +64,7 @@ void ofApp::setup(){
     }
     
     lineGen = new LineGen;
+    snippetsCounter = 0;
 }
 
 //--------------------------------------------------------------
@@ -154,7 +155,7 @@ void ofApp::draw(){
                 mfcc.mfcc(myFFT.magnitudes, mfccs);
             }
         }
-        cout << centroid << endl;
+          cout << centroid << endl;
 //        // convert the array of bins to a vector
 //        vector <float> bins;
 //        for (int i = 0; i < myFFT.bins; i++){
@@ -169,6 +170,7 @@ void ofApp::draw(){
         float avgRMS = rmsSum / (SNIPPET_LENGTH/initialBufferSize);
         
         snippets.push_back({centroid, peakFreq, avgRMS, drawing});
+        snippetsCounter++;
         
         // if snippets vector reaches a certain size it is trimmed
         int maxLength = 10;
@@ -202,26 +204,42 @@ void ofApp::draw(){
                 ofColor colour;
                 int colourIndex = ofRandom(colourQuantity);
                 colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
-                cout << colour << endl;
                 lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames, squiggle, orient, colour);
             }
             
             if (snippets[snippets.size() - 2].drawing == true){
-                // check if increasing or decreasing
-                int increase = 0;
-                int decrease = 0;
-                for (int i = 1; i < snippets.size(); i++){
-                    if (snippets[i].centroid > snippets[i - 1].centroid){
-                        decrease++;
-                    } else{
-                        increase++;
+                // already drawing a line
+                if (snippetsCounter > snippets.size() / 2){
+                    // check previous snippets, i dont do this after every snippet
+                    int increase = 0;
+                    int decrease = 0;
+                    vector <int> peakFreqs = {0};
+
+                    for (int i = 0; i < snippets.size(); i++){
+                        cout << snippets[i].peakFreq << endl;
+                        if (i != 0){
+                            if (snippets[i].centroid > snippets[i - 1].centroid){
+                                decrease++;
+                            } else{
+                                increase++;
+                            }
+                        }
+                        peakFreqs.push_back(snippets[i].peakFreq);
                     }
-                }
-                if (increase > decrease){
-                    // pitch is increasing
-                    lineGen->changeLine(0, {600, 20}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
-                } else{
-                    lineGen->changeLine(0, {250, height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                    
+                    if (increase > decrease){
+                        // pitch is increasing
+                        lineGen->changeLine(0, {600, 20}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                    } else{
+                        // pitch is decreasing
+                        lineGen->changeLine(0, {250, height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                    }
+                    
+                    // check if peak freq has been consistent & centroid is averaging high
+                    if (occurenceCheck(peakFreqs, 4)){
+                        cout << "done iiittt" << endl;
+                        
+                    }
                 }
             }
             
@@ -235,16 +253,16 @@ void ofApp::draw(){
         rmsSum = 0;
     }
     
-//    // Draw fft output
-//    float xinc = horizWidth / fftSize * 2.0;
-//    int drawFreq = 0;
-//    for(int i=0; i < fftSize / 2; i++) {
-//        // scale the values so they're more visible
-//        float height = myFFT.magnitudes[i] * 100;
-//        if (i % 10 == 0){
-//            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
-//        }
-//    }
+    // Draw fft output
+    float xinc = horizWidth / fftSize * 2.0;
+    int drawFreq = 0;
+    for(int i=0; i < fftSize / 2; i++) {
+        // scale the values so they're more visible
+        float height = myFFT.magnitudes[i] * 100;
+        if (i % 10 == 0){
+            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+        }
+    }
 //
 //    // Draw octave analyser
 //    ofSetColor(255, 0, 255, 200);
@@ -268,6 +286,15 @@ void ofApp::audioIn(ofSoundBuffer& input){
         snippetBufferOffset++;
         RMS = sqrt(sum);
         rmsSum += RMS;
+    
+    if(snippetBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
+        triggerFFT = true;
+        recording = false;
+        snippetBufferOffset = 0;
+    }
+    if(playingBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
+        isPlaying = false;
+    }
 }
 
 //--------------------------------------------------------------
@@ -367,3 +394,29 @@ ofVec2f ofApp::cartToPolar(float x, float y){
     polar.y = sqrt((x * x) + (y * y));
     return polar;
 }
+
+//--------------------------------------------------------------
+bool ofApp::occurenceCheck(vector<int> &freqs, int thresh){
+    sort(freqs.begin(), freqs.end());
+    int currentFreq = freqs[0];
+    int currentCount = 0, maxFreq = 0, maxCount = 0;
+    for (int i = 0; i < freqs.size(); i++){
+        if (freqs[i] == currentFreq){
+            currentCount++;
+        }
+        else{
+            if (currentCount > maxCount){
+                maxCount = currentCount;
+                maxFreq = freqs[i - 1];
+            }
+            currentCount = 0;
+        }
+    }
+    
+    if (maxCount >= thresh){
+       return true;
+    } else{
+        return false;
+    }
+}
+

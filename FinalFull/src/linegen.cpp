@@ -30,7 +30,7 @@ void LineGen::killLine(int &index){
     this->lines.erase(lines.begin() + (index - 1));
 }
 
-void LineGen::squiggleLine(int &index){
+void LineGen::squiggleLine(int index){
     this->lines[index]->squiggle = true;
 }
 
@@ -88,7 +88,7 @@ void LineGen::run(){
 
 void LineGen::draw(int x, int y){
     // standard draw function, can be overwritten by inherited classes
-    ofDrawEllipse(x, y, 5, 5);
+    ofDrawEllipse(x, y, 10, 10);
 }
 
 void LineGen::changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2){

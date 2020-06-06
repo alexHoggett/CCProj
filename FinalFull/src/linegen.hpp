@@ -39,7 +39,7 @@ class LineGen{
         void run();
         void changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2);
         void clearAll();
-        void squiggleLine(int &index);
+        void squiggleLine(int index);
     
     private:
         // to store all the lines

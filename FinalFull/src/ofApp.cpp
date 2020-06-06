@@ -48,14 +48,14 @@ void ofApp::setup(){
     playingBufferOffset = 0;
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
-    ofSetBackgroundAuto(true);
+    ofSetBackgroundAuto(false);
     ofSetBackgroundColor(0, 0, 0);
     
     for(int i = 0; i < colourQuantity; i++){
         if (i % 2 == 0){
             hueValues[i] = rand() % 360;
             saturationValues[i] = 100;
-            brightnessValues[i] = rand() % 100;
+            brightnessValues[i] = ofRandom(50, 100);
         } else{
             hueValues[i] = 195;
             saturationValues[i] = rand() % 100;
@@ -155,7 +155,7 @@ void ofApp::draw(){
                 mfcc.mfcc(myFFT.magnitudes, mfccs);
             }
         }
-          cout << centroid << endl;
+          // cout << centroid << endl;
 //        // convert the array of bins to a vector
 //        vector <float> bins;
 //        for (int i = 0; i < myFFT.bins; i++){
@@ -213,10 +213,9 @@ void ofApp::draw(){
                     // check previous snippets, i dont do this after every snippet
                     int increase = 0;
                     int decrease = 0;
-                    vector <int> peakFreqs = {0};
-
+                    vector <int> peakFreqs;
+                    float avgCentroid = 0;
                     for (int i = 0; i < snippets.size(); i++){
-                        cout << snippets[i].peakFreq << endl;
                         if (i != 0){
                             if (snippets[i].centroid > snippets[i - 1].centroid){
                                 decrease++;
@@ -225,6 +224,7 @@ void ofApp::draw(){
                             }
                         }
                         peakFreqs.push_back(snippets[i].peakFreq);
+                        avgCentroid += snippets[i].centroid;
                     }
                     
                     if (increase > decrease){
@@ -235,9 +235,14 @@ void ofApp::draw(){
                         lineGen->changeLine(0, {250, height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
                     }
                     
+                    // calc avg centroid across snippets
+                    avgCentroid /= snippets.size();
+                    cout << avgCentroid << endl;
+                    
                     // check if peak freq has been consistent & centroid is averaging high
-                    if (occurenceCheck(peakFreqs, 4)){
-                        cout << "done iiittt" << endl;
+                    if (occurenceCheck(peakFreqs, 4) == true && avgCentroid > 0.1){
+                        cout << "gotcha" << endl;
+                        lineGen->squiggleLine(0);
                         
                     }
                 }
@@ -254,15 +259,15 @@ void ofApp::draw(){
     }
     
     // Draw fft output
-    float xinc = horizWidth / fftSize * 2.0;
-    int drawFreq = 0;
-    for(int i=0; i < fftSize / 2; i++) {
-        // scale the values so they're more visible
-        float height = myFFT.magnitudes[i] * 100;
-        if (i % 10 == 0){
-            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
-        }
-    }
+//    float xinc = horizWidth / fftSize * 2.0;
+//    int drawFreq = 0;
+//    for(int i=0; i < fftSize / 2; i++) {
+//        // scale the values so they're more visible
+//        float height = myFFT.magnitudes[i] * 100;
+//        if (i % 10 == 0){
+//            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
+//        }
+//    }
 //
 //    // Draw octave analyser
 //    ofSetColor(255, 0, 255, 200);
@@ -410,6 +415,7 @@ bool ofApp::occurenceCheck(vector<int> &freqs, int thresh){
                 maxFreq = freqs[i - 1];
             }
             currentCount = 0;
+            currentFreq = freqs[i];
         }
     }
     

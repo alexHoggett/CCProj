@@ -1,15 +1,27 @@
 #pragma once
 
+// software
 #include "ofMain.h"
 #include "ofxMaxim.h"
 #include <math.h>
 #include "maxiMFCC.h"
-#include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
 #include <algorithm>
-#define SNIPPET_LENGTH 30
+#define SNIPPET_LENGTH 100
 #define colourQuantity 10
+
+// hardware
+#include <bcm2835.h>
+#include <stdio.h>
+#include <cstdint>
+
+// Define Input Pins
+#define PUSH1 			RPI_GPIO_P1_08  	//GPIO14
+#define PUSH2 			RPI_V2_GPIO_P1_38  	//GPIO20 
+#define TOGGLE_SWITCH 	RPI_V2_GPIO_P1_32 	//GPIO12
+#define FOOT_SWITCH 	RPI_GPIO_P1_10 		//GPIO15
+#define LED   			RPI_V2_GPIO_P1_36 	//GPIO16
 
 struct snippet{
     float centroid;
@@ -25,6 +37,7 @@ class ofApp : public ofBaseApp{
         void update();
         void draw();
         void keyPressed(int key);
+        void audioOut(ofSoundBuffer & buffer);
         void shiftSnippets(vector<snippet> snippets);
         
         // For generating colours
@@ -44,8 +57,8 @@ class ofApp : public ofBaseApp{
         int rows;
         int columns;
         int blocks [16][12];
-    
-        MistyBrush * misty;
+        
+        ofSoundStream soundStream; // used to establish the callback function
         LineGen * lineGen;
         vector<snippet> snippets;
         int snippetsCounter;
@@ -87,4 +100,15 @@ class ofApp : public ofBaseApp{
     
         maxiMFCC mfcc;
         double *mfccs;
+        
+        // for hardware
+        uint32_t read_timer=0;
+        uint32_t input_signal=0;
+        uint8_t mosi[10] = { 0x01, 0x00, 0x00 }; //12 bit ADC read 0x08 ch0, - 0c for ch1 
+	uint8_t miso[10] = { 0 };
+
+        uint8_t FOOT_SWITCH_val;
+        uint8_t TOGGLE_SWITCH_val;
+        uint8_t PUSH1_val;
+        uint8_t PUSH2_val;
 };

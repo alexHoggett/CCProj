@@ -7,14 +7,55 @@ ofApp::~ofApp(){
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+    // Start the BCM2835 Library to access GPIO.
+    if (!bcm2835_init()){
+      printf("bcm2835_init failed. Are you running as root??\n");
+    }
+	// Start the SPI BUS.
+	if (!bcm2835_spi_begin()){
+      printf("bcm2835_spi_begin failed. Are you running as root??\n");
+    }
+    
+	//define SPI bus configuration
+    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
+    bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64); 	  // 4MHz clock with _64
+    bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      // The default
+    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      // the default
+	
+    //Define GPIO pins configuration
+	// bcm2835_gpio_fsel(TOGGLE_SWITCH, BCM2835_GPIO_FSEL_INPT);	//TOGGLE_SWITCH as input
+	bcm2835_gpio_fsel(FOOT_SWITCH, BCM2835_GPIO_FSEL_INPT); 	//FOOT_SWITCH as input
+	// bcm2835_gpio_fsel(LED, BCM2835_GPIO_FSEL_OUTP);				//LED as output
+
+	// bcm2835_gpio_set_pud(TOGGLE_SWITCH, BCM2835_GPIO_PUD_UP);   //TOGGLE_SWITCH pull-up enabled 
+	bcm2835_gpio_set_pud(FOOT_SWITCH, BCM2835_GPIO_PUD_UP);     //FOOT_SWITCH pull-up enabled 
+    
     // Audio set-up
-    sampleRate = 64;
-    initialBufferSize = 1;
+    sampleRate = 44100;
+    initialBufferSize = 4;
     
     fftSize = 64;
     myFFT.setup(fftSize, 32, 60);
     
     ofxMaxiSettings::setup(sampleRate, 2, initialBufferSize);
+    
+    // Set up soundStream
+    ofSoundStreamSettings settings;
+    soundStream.printDeviceList();
+   
+    auto devices = soundStream.getMatchingDevices("default");
+    if (!devices.empty()){
+        settings.setOutDevice(devices[0]);
+    }
+    
+    
+    settings.setOutListener(this);
+    settings.sampleRate = sampleRate;
+    settings.numOutputChannels = 1;
+    settings.numInputChannels = 0;
+    settings.bufferSize = initialBufferSize;
+    soundStream.setup(settings);
     
     // Initialising values
     triggerFFT = false;
@@ -48,23 +89,10 @@ void ofApp::update(){
     width = ofGetWindowWidth();
     height = ofGetWindowHeight();
     
-    // for testing, i will just randomly generate a number between -1 & 1
-    float inputSignal = ofRandom(-1, 1);
+    TOGGLE_SWITCH_val = bcm2835_gpio_lev(TOGGLE_SWITCH);
+	uint8_t FOOT_SWITCH_val = bcm2835_gpio_lev(FOOT_SWITCH);
+	bcm2835_gpio_write(LED,1); //light the effect when running.
     
-    audioRecording[recordingCounter] = inputSignal;
-    rmsSum += inputSignal * inputSignal;
-    
-    if(recordingCounter >= SNIPPET_LENGTH){
-        cout << "hmm" << endl;
-        RMS = sqrt(rmsSum);
-        triggerFFT = true;
-        recordingCounter = 0;
-        rmsSum = 0;
-    } else{
-        recordingCounter++;
-    }
-    
-    cout << snippets.size() << endl;
 }
 
 //--------------------------------------------------------------
@@ -99,18 +127,10 @@ void ofApp::draw(){
 //        }
 //    }
     
-    // Draw spectrum
-    float horizWidth = width;
-    float horizOffset = 100;
-    float fftTop = 250;
-    float mfccTop = 350;
-    float chromagramTop = 450;
-    
     ofSetColor(255, 0, 0, 255);
     
-    float rmsThresh = 0.8;
+    float rmsThresh = 4;
     // I use the RMS to trigger an analysis of what was just played
-    cout << "RMS: " << RMS << endl;
     if (RMS > rmsThresh && !drawing && snippets.size() > 1){
         drawing = true;
     }
@@ -162,7 +182,6 @@ void ofApp::draw(){
         }
         
         if (drawing && snippets.size() > 2){
-            cout << "is it sdrawing" << snippets[snippets.size() - 2].drawing << endl;
             if (snippets[snippets.size() - 2].drawing == false){
                 // start drawing a new line
                 xyPoint startPoint = {};
@@ -188,7 +207,6 @@ void ofApp::draw(){
                 ofColor colour;
                 int colourIndex = ofRandom(colourQuantity);
                 colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
-                cout << "adding" << endl;
                 lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames, squiggle, orient, colour);
             }
             
@@ -222,18 +240,16 @@ void ofApp::draw(){
                     
                     // calc avg centroid across snippets
                     avgCentroid /= snippets.size();
-                    cout << avgCentroid << endl;
                     
                     // check if peak freq has been consistent & centroid is averaging high
                     if (occurenceCheck(peakFreqs, 4) == true && avgCentroid > 0.1){
-                        cout << "gotcha" << endl;
                         lineGen->squiggleLine(0);
                         
                     }
                 }
             }
             
-            if (RMS < rmsThresh * 0.4){
+            if (RMS < 3.6){
                 // stop drawing as the signal is too low
                 drawing = false;
                 lineGen->clearAll();
@@ -242,28 +258,34 @@ void ofApp::draw(){
         
         triggerFFT = false;
     }
-    
-    // Draw fft output
-//    float xinc = horizWidth / fftSize * 2.0;
-//    int drawFreq = 0;
-//    for(int i=0; i < fftSize / 2; i++) {
-//        // scale the values so they're more visible
-//        float height = myFFT.magnitudes[i] * 100;
-//        if (i % 10 == 0){
-//            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
-//        }
-//    }
-//
-//    // Draw octave analyser
-//    ofSetColor(255, 0, 255, 200);
-//    xinc = horizWidth / oct.nAverages;
-//    for (int i = 0; i < oct.nAverages; i++) {
-//        float height = oct.averages[i] / 20.0 * 100;
-//        ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
-//    }
-    
     lineGen->run();
 }
+//--------------------------------------------------------------
+void ofApp::audioOut(ofSoundBuffer & buffer){
+    bcm2835_spi_transfernb((char*)mosi, (char*)miso, 3);
+    input_signal = miso[2] + ((miso[1] & 0x0F) << 8);
+    int min = 2020;
+    int max = 2060;
+    
+    float norm = ofClamp(input_signal, min, max);
+    norm -= min;
+    norm /= (max - min);
+    norm = (norm * 2) - 1;
+    
+    rmsSum += norm * norm;
+    
+    if(recordingCounter >= SNIPPET_LENGTH){
+        cout << "RMS: " << RMS << endl;
+        RMS = sqrt(rmsSum);
+        triggerFFT = true;
+        recordingCounter = 0;
+        rmsSum = 0;
+    } else{
+        audioRecording[recordingCounter] = norm;
+        recordingCounter++;
+    }
+}
+
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
     if (key == '1'){

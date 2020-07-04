@@ -85,9 +85,9 @@ void ChordSpot::analyse(int fftSize, int sampleRate, int octaves, vector<float> 
     }
     
     // print to console for debugging
-    cout << "max mag: " << maxMag << endl;
-    cout << "max freq: " << maxFreq  << endl;
-    cout << "max bin: " << maxBin << endl;
+//    cout << "max mag: " << maxMag << endl;
+//    cout << "max freq: " << maxFreq  << endl;
+//    cout << "max bin: " << maxBin << endl;
     
     // lowest octaves (in Hz)
     float baseC = 16.35;
@@ -124,7 +124,6 @@ void ChordSpot::analyse(int fftSize, int sampleRate, int octaves, vector<float> 
     // create a prediction vector for the chord
     std::vector<int> prediction = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     for(int i = 0; i < topNotes.size(); i++){
-        cout << topNotes[i] << endl;
         prediction[topNotes[i]] =  1;
     }
     

@@ -31,11 +31,11 @@ void LineGen::addCrescent(xyPoint start, xyPoint end, ofColor colour){
     newCresc->start = start;
     newCresc->end = end;
     
-    newCresc->control1 = {start.x + (int)ofRandom(-200, 200), (int)ofRandom(start.y, end.y)};
-    newCresc->control2 = {start.x + (int)ofRandom(-200, 200), (int)ofRandom(start.y, end.y)};
+    newCresc->control1 = {start.x + (int)ofRandom(-1000, 1000), (int)ofRandom(start.y, end.y)};
+    newCresc->control2 = {start.x + (int)ofRandom(-1000, 1000), (int)ofRandom(start.y, end.y)};
     
-    newCresc->control3 = {end.x + (int)ofRandom(-200, 200), (int)ofRandom(start.y, end.y)};
-    newCresc->control4 = {end.x + (int)ofRandom(-200, 200), (int)ofRandom(start.y, end.y)};
+    newCresc->control3 = {end.x + (int)ofRandom(-1000, 1000), (int)ofRandom(start.y, end.y)};
+    newCresc->control4 = {end.x + (int)ofRandom(-1000, 1000), (int)ofRandom(start.y, end.y)};
     
     newCresc->currentFrame = 0;
     newCresc->totalFrames = ofDist(start.x, start.y, end.x, end.y);
@@ -90,7 +90,7 @@ void LineGen::run(){
             }
         }
         
-        ofSetColor(currentLine->colour);
+        ofSetColor(currentLine->colour, 4);
         
         // stored current position so that we can change direction from last drawn point
         this->lines[i]->currentPos = {currentPoint.x, currentPoint.y};
@@ -119,15 +119,14 @@ void LineGen::run(){
         
         // draw between these 2 points
         float dist = ofDist(currentPoint1.x, currentPoint1.y, currentPoint2.x, currentPoint2.y);
-        cout << "start" << endl;
-        for (int i = 0; i < dist; i++){
+        int ellipseSize = 8;
+        for (int i = 0; i < dist / ellipseSize; i++){
             float x, y;
+            ofSetColor(currentCrescent->colour, 4);
             x = ofLerp(currentPoint1.x, currentPoint2.x, (float)i / dist);
             y = ofLerp(currentPoint1.y, currentPoint2.y, (float)i / dist);
-            cout << x << endl;
-            ofDrawEllipse(x, y, 5, 5);
+            ofDrawEllipse(x + ofRandom(-2, 2), y + ofRandom(-2, 2), ellipseSize, ellipseSize);
         }
-        cout << "end" << endl;
         
         this->crescents[i]->currentFrame++;
         
@@ -140,7 +139,7 @@ void LineGen::run(){
 
 void LineGen::draw(int x, int y){
     // standard draw function, can be overwritten by inherited classes
-    ofDrawEllipse(x, y, 10, 10);
+    ofDrawEllipse(x, y, ofRandom(200, 300), ofRandom(200, 300));
 }
 
 xyPoint LineGen::calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame){
@@ -159,4 +158,9 @@ void LineGen::changeLine(int index, xyPoint end, xyPoint control1, xyPoint contr
     this->lines[index]->control1 = control1;
     this->lines[index]->control2 = control2;
     this->lines[index]->currentFrame = 0;
+}
+
+void LineGen::clean(){
+    // transition the canvas to black
+    
 }

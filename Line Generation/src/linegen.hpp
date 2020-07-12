@@ -53,6 +53,8 @@ class LineGen{
         void clearAll();
         void squiggleLine(int index);
         void addCrescent(xyPoint start, xyPoint end, ofColor colour);
+        void clean();
+        void begin();
     
     private:
         // to store all the lines

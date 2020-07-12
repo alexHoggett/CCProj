@@ -4,11 +4,13 @@
 void ofApp::setup(){
     settingPos = false;
     refresh = true;
+    state = 0;
     ofBackground(0);
     ofEnableAlphaBlending();
     ofSetBackgroundAuto(refresh);
     lineGen = new LineGen();
     mistyGen = new MistyBrush();
+    cleanGen = new CleanBrush();
 
     if(ofIsGLProgrammableRenderer()){
         gaussianBlurX.load("shadersGL3/shaderBlurX");
@@ -36,6 +38,8 @@ void ofApp::draw(){
     
     lineGen->run();
     mistyGen->run();
+    cleanGen->run();
+    stairs.run();
 }
 
 //--------------------------------------------------------------
@@ -60,6 +64,13 @@ void ofApp::keyPressed(int key){
     } else if (key == '3'){
         c.set(ofRandom(255), ofRandom(255), ofRandom(255));
         lineGen->addLine({(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, 1000, true, 0.5, c);
+    } else if (key == '4'){
+        state = !state;
+        lineGen->clearAll();
+        cleanGen->begin();
+        
+    } else if (key == '5'){
+        stairs.add({20, 20}, {200, 200}, 500, 8, 0.46);
     }
 }
 

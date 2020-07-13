@@ -2,7 +2,7 @@
 
 //--------------------------------------------------------------
 ofApp::~ofApp(){
-    
+    // destructor
 }
 
 //--------------------------------------------------------------
@@ -17,12 +17,6 @@ void ofApp::setup(){
     
     fftSize = 1024*4;
     myFFT.setup(fftSize, 1024*2, 512);
-    
-    nAverages = 12;
-    oct.setup(sampleRate, fftSize/2, nAverages);
-    
-    mfccs = (double*) malloc(sizeof(double) * 13);
-    mfcc.setup(512, 42, 13, 20, 20000, sampleRate);
     
     ofxMaxiSettings::setup(sampleRate, 2, initialBufferSize);
     ofSoundStreamSettings settings;
@@ -45,12 +39,12 @@ void ofApp::setup(){
     triggerFFT = false;
     drawing = false;
     snippetBufferOffset = 0;
-    playingBufferOffset = 0;
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
     ofSetBackgroundAuto(false);
     ofSetBackgroundColor(0, 0, 0);
     
+    // randomising colour values within a range
     for(int i = 0; i < colourQuantity; i++){
         if (i % 2 == 0){
             hueValues[i] = rand() % 360;
@@ -64,6 +58,7 @@ void ofApp::setup(){
     }
     
     lineGen = new LineGen;
+    mistyGen = new MistyBrush;
     snippetsCounter = 0;
 }
 
@@ -77,50 +72,10 @@ void ofApp::update(){
         recording = false;
         snippetBufferOffset = 0;
     }
-    if(playingBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
-        isPlaying = false;
-    }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    // draw sectors
-//    ofNoFill();
-//    ofSetColor(0, 255, 0);
-//    int radius = 700;
-//    ofDrawCircle(width/2, height/2, radius);
-//    for (int i = 0; i < 12; i++){
-//        ofSetColor(0, 255, 0);
-//        ofVec2f edge = polarToCart(angles[i] - PI/2, radius);
-//
-//        // x & y values from the centre of circle
-//        float x = edge.x + width/2;
-//        float y = edge.y + height/2;
-//
-//        ofDrawLine(width/2, height/2, x, y);
-//    }
-
-    // Draw rects
-//    ofVec2f mouse = whichBlock(ofGetMouseX(), ofGetMouseY());
-//    for (int i = 0; i < 16; i++){
-//        for (int j = 0; j < 12; j++){
-//            // Highlight box where mouse is
-//            if (mouse.x == i && mouse.y == j){
-//                ofFill();
-//            } else {
-//                ofNoFill();
-//            }
-//            ofDrawRectangle(width/16 * i, height/12 * j, width/16, height/12);
-//        }
-//    }
-    
-    // Draw spectrum
-    float horizWidth = width;
-    float horizOffset = 100;
-    float fftTop = 250;
-    float mfccTop = 350;
-    float chromagramTop = 450;
-    
     ofSetColor(255, 0, 0, 255);
     
     float rmsThresh = 0.8;
@@ -137,7 +92,6 @@ void ofApp::draw(){
             // get fft
             if (myFFT.process(wave)){
                 myFFT.magsToDB();
-                oct.calculate(myFFT.magnitudesDB);
                 float sum = 0;
                 float maxFreq = 0;
                 int maxBin = 0;
@@ -152,20 +106,9 @@ void ofApp::draw(){
                 }
                 centroid = sum / (fftSize / 2);
                 peakFreq = (float)maxBin/fftSize * 44100;
-                mfcc.mfcc(myFFT.magnitudes, mfccs);
             }
         }
-          // cout << centroid << endl;
-//        // convert the array of bins to a vector
-//        vector <float> bins;
-//        for (int i = 0; i < myFFT.bins; i++){
-//            bins.push_back(myFFT.magnitudes[i]);
-//        }
-//        chordSpotter.analyse(fftSize, sampleRate, 8, bins);
-//
-//        string pred = chordSpotter.returnChord();
-//        cout << pred << endl;
-        
+                
         // divide the sum of the rms's by the amount of buffers used to fill the snippet
         float avgRMS = rmsSum / (SNIPPET_LENGTH/initialBufferSize);
         
@@ -179,24 +122,49 @@ void ofApp::draw(){
         }
         
         if (drawing && snippets.size() > 2){
+            // send bins to chordSpotter to detect a chord
+            if (peakFreq != 0){
+                // convert the array of bins to a vector
+                vector <float> bins;
+                for (int i = 0; i < myFFT.bins; i++){
+                    bins.push_back(myFFT.magnitudes[i]);
+                }
+                chordSpotter.analyse(fftSize, sampleRate, 8, bins);
+
+                string pred = chordSpotter.returnChord();
+                cout << pred << endl;
+            }
+            
             if (snippets[snippets.size() - 2].drawing == false){
                 // start drawing a new line
                 xyPoint startPoint = {};
-                if (centroid < 0.1){
-                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
-                } else {
-                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
-                }
-                
                 xyPoint endPoint = {};
-                if (centroid < 0.1){
-                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
-                } else {
-                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
-                }
+                xyPoint control1 = {};
+                xyPoint control2 = {};
+                xyPoint crescEnd = {};
                 
-                xyPoint control1 = {(int)ofRandom(width), (int)ofRandom(height)};
-                xyPoint control2= {(int)ofRandom(width), (int)ofRandom(height)};
+                // possibility of drawing line or shape
+                int prob = ofRandom(100);
+                bool cresc = false;
+                if (prob <= 40){
+                    cresc = true;
+                }
+                if (centroid < 0.1){
+                    // draw in lower region
+                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                } else {
+                    // draw in upper region
+                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                }
+                control1 = {(int)ofRandom(width), (int)ofRandom(height)};
+                control2= {(int)ofRandom(width), (int)ofRandom(height)};
+                if (cresc){
+                    // drawing a crescent
+                    // currently keeping them small
+                    crescEnd = {startPoint.x + (int)ofRandom(-50, 50), startPoint.y + (int)ofRandom(-50, 50)};
+                }
                 
                 int totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
                 bool squiggle = false;
@@ -205,9 +173,12 @@ void ofApp::draw(){
                 int colourIndex = ofRandom(colourQuantity);
                 colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
                 lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames, squiggle, orient, colour);
+                if(cresc){
+                    lineGen->addCrescent(startPoint, crescEnd, colour);
+                }
             }
             
-            if (snippets[snippets.size() - 2].drawing == true){
+            if (snippets[snippets.size() - 2].drawing == true && lineGen->returnTotalLines() > 0){
                 // already drawing a line
                 if (snippetsCounter > snippets.size() / 2){
                     // check previous snippets, i dont do this after every snippet
@@ -217,10 +188,11 @@ void ofApp::draw(){
                     float avgCentroid = 0;
                     for (int i = 0; i < snippets.size(); i++){
                         if (i != 0){
+                            cout << snippets[i].centroid << endl;
                             if (snippets[i].centroid > snippets[i - 1].centroid){
-                                decrease++;
-                            } else{
                                 increase++;
+                            } else{
+                                decrease++;
                             }
                         }
                         peakFreqs.push_back(snippets[i].peakFreq);
@@ -229,15 +201,16 @@ void ofApp::draw(){
                     
                     if (increase > decrease){
                         // pitch is increasing
-                        lineGen->changeLine(0, {600, 20}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                        cout << "increasing" << endl;
+                        lineGen->increasing(0);
                     } else{
+                        cout << "decreasing" << endl;
                         // pitch is decreasing
-                        lineGen->changeLine(0, {250, height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                        lineGen->decreasing(0);
                     }
                     
                     // calc avg centroid across snippets
                     avgCentroid /= snippets.size();
-                    cout << avgCentroid << endl;
                     
                     // check if peak freq has been consistent & centroid is averaging high
                     if (occurenceCheck(peakFreqs, 4) == true && avgCentroid > 0.1){
@@ -249,6 +222,7 @@ void ofApp::draw(){
             }
             
             if (rmsSum < rmsThresh * 0.4){
+                // audio has dropped low enough to cease drawing
                 drawing = false;
                 lineGen->clearAll();
             }
@@ -257,60 +231,26 @@ void ofApp::draw(){
         triggerFFT = false;
         rmsSum = 0;
     }
-    
-    // Draw fft output
-//    float xinc = horizWidth / fftSize * 2.0;
-//    int drawFreq = 0;
-//    for(int i=0; i < fftSize / 2; i++) {
-//        // scale the values so they're more visible
-//        float height = myFFT.magnitudes[i] * 100;
-//        if (i % 10 == 0){
-//            ofDrawRectangle(horizOffset + (i*xinc),ofGetHeight() - height,1, height);
-//        }
-//    }
-//
-//    // Draw octave analyser
-//    ofSetColor(255, 0, 255, 200);
-//    xinc = horizWidth / oct.nAverages;
-//    for (int i = 0; i < oct.nAverages; i++) {
-//        float height = oct.averages[i] / 20.0 * 100;
-//        ofDrawRectangle(horizOffset + (i * xinc), chromagramTop - height, 2, height);
-//    }
-    
+    mistyGen->run();
     lineGen->run();
 }
 //--------------------------------------------------------------
 void ofApp::audioIn(ofSoundBuffer& input){
-    
     float sum = 0;
-        // fill the audio snippet
-        for (int i = 0; i < input.getNumFrames(); i++){
-            snippet[i + snippetBufferOffset * input.getNumFrames()] = input[i];
-            sum += input[i] * input[i];
-        }
-        snippetBufferOffset++;
-        RMS = sqrt(sum);
-        rmsSum += RMS;
-    
+    // fill the audio snippet
+    for (int i = 0; i < input.getNumFrames(); i++){
+        snippet[i + snippetBufferOffset * input.getNumFrames()] = input[i];
+        sum += input[i] * input[i];
+    }
+    snippetBufferOffset++;
+    // calc RMS for this buffer
+    RMS = sqrt(sum);
+    rmsSum += RMS; // to calc RMS for whole snippet
+
     if(snippetBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
         triggerFFT = true;
         recording = false;
         snippetBufferOffset = 0;
-    }
-    if(playingBufferOffset * initialBufferSize >= SNIPPET_LENGTH - initialBufferSize){
-        isPlaying = false;
-    }
-}
-
-//--------------------------------------------------------------
-void ofApp::audioOut(ofSoundBuffer& output){
-    std::size_t outChannels = output.getNumChannels();
-    if (isPlaying){
-        for (int i = 0; i < output.getNumFrames(); i++){
-            output[i * outChannels + 0] = snippet[i + playingBufferOffset * output.getNumFrames()] * 2;
-            output[i * outChannels + 1] = snippet[i + playingBufferOffset * output.getNumFrames()] * 2;
-        }
-        playingBufferOffset++;
     }
 }
 

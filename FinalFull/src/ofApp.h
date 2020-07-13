@@ -7,6 +7,7 @@
 #include "mistyBrush.hpp"
 #include "linegen.hpp"
 #include "chordspot.hpp"
+#include "stairs.hpp"
 #include <algorithm>
 #define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
@@ -24,11 +25,11 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
-        void audioOut(ofSoundBuffer& output); //output method
         void audioIn(ofSoundBuffer& input); //input method
-        ofSoundStream soundStream;
 		void keyPressed(int key);
         void shiftSnippets(vector<snippet> snippets);
+    
+        ofSoundStream soundStream;
 		
         // For generating colours
         float hueValues [colourQuantity] = {0};
@@ -48,8 +49,10 @@ class ofApp : public ofBaseApp{
         int columns;
         int blocks [16][12];
     
-        MistyBrush * misty;
+        Stairs stairGen;
+        MistyBrush * mistyGen;
         LineGen * lineGen;
+        
         vector<snippet> snippets;
         int snippetsCounter;
     
@@ -57,8 +60,6 @@ class ofApp : public ofBaseApp{
         ChordSpot chordSpotter;
     
         // audio / maximilian
-        float * lAudioOut;
-        float * rAudioOut;
         float * lAudioIn;
         float * rAudioIn;
         int initialBufferSize;
@@ -69,25 +70,11 @@ class ofApp : public ofBaseApp{
         double wave,sample,outputs[2], ifftVal;
         float snippet [SNIPPET_LENGTH] = {0};
         int snippetBufferOffset;
-        int playingBufferOffset;
-        bool isPlaying = false;
-        maxiOsc osc;
-    
-        ofxMaxiFFTOctaveAnalyzer oct;
-        int nAverages;
-    
         float peakFreq = 0;
         float centroid = 0;
         float RMS = 0; // to hold current rms
         float rmsSum = 0; // to calc the average rms of an audio snippet
-    
         ofxMaxiFFT myFFT;
         int fftSize;
         int bins, dataSize;
-    
-        float callTime;
-        timeval callTS, callEndTS;
-    
-        maxiMFCC mfcc;
-        double *mfccs;
 };

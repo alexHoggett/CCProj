@@ -31,6 +31,18 @@ class LineGen{
         ofColor colour;
     };
     
+    struct cresc{
+        xyPoint start;
+        xyPoint end;
+        xyPoint control1;
+        xyPoint control2;
+        xyPoint control3;
+        xyPoint control4;
+        int currentFrame;
+        int totalFrames;
+        ofColor colour;
+    };
+    
     public:
         LineGen();
         // add a single line to be drawn
@@ -40,14 +52,21 @@ class LineGen{
         void changeLine(int index, xyPoint end, xyPoint control1, xyPoint control2);
         void clearAll();
         void squiggleLine(int index);
-    
+        void addCrescent(xyPoint start, xyPoint end, ofColor colour);
+        int returnTotalLines(); // return how many lines are currently being drawn
+        void increasing(int index);
+        void decreasing(int index);
+        
     private:
         // to store all the lines
         vector <line*> lines;
+        vector <cresc*> crescents;
         // to delete them from the vector
         void killLine(int &index);
+        void killCresc(int &index);
         // allow draw to be overridden in inherited classed to allow for different 'drawing patterns'
         virtual void draw(int x, int y);
+        xyPoint calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame);
 };
 
 #endif /* linegen_hpp */

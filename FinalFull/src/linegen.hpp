@@ -56,6 +56,7 @@ class LineGen{
         int returnTotalLines(); // return how many lines are currently being drawn
         void increasing(int index);
         void decreasing(int index);
+        void begin();
         
     private:
         // to store all the lines

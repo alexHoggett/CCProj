@@ -8,6 +8,7 @@
 #include "linegen.hpp"
 #include "chordspot.hpp"
 #include "stairs.hpp"
+#include "cleanBrush.hpp"
 #include <algorithm>
 #define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10

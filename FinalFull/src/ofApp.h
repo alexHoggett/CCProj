@@ -9,6 +9,7 @@
 #include "chordspot.hpp"
 #include "stairs.hpp"
 #include "cleanBrush.hpp"
+#include "largeBrush.hpp"
 #include <algorithm>
 #define SNIPPET_LENGTH 10752 // ~1/2s, must be multiple of buffer size
 #define colourQuantity 10
@@ -42,6 +43,7 @@ class ofApp : public ofBaseApp{
         ofVec2f cartToPolar(float x, float y);
         ofVec2f whichBlock(float x, float y);
         bool occurenceCheck(vector <int> &freqs, int thresh); // returns true if there are over a certain number of occurences of any element, roughly checking for consistency
+        bool increaseDecrease();
     
         float angles [12] = {PI/6, PI/3, PI/2, PI*2/3, PI*5/6, PI, PI*7/6, PI*4/3, PI*3/2, PI*5/3, PI*11/6, 2*PI};
         int height, width;
@@ -51,14 +53,23 @@ class ofApp : public ofBaseApp{
         int blocks [16][12];
     
         Stairs stairGen;
-        MistyBrush * mistyGen;
+        LineGen * cleanGen;
+        LineGen * mistyGen;
         LineGen * lineGen;
+        LineGen * largeGen;
         
         vector<snippet> snippets;
         int snippetsCounter;
+        double frameCount;
+        bool frameCountBegin;
     
         // for chord recognition
         ChordSpot chordSpotter;
+    
+        bool drawing;
+        bool footSwitch;
+        bool toggleSwitch;
+        bool stopDrawing;
     
         // audio / maximilian
         float * lAudioIn;
@@ -67,7 +78,6 @@ class ofApp : public ofBaseApp{
         int sampleRate;
         bool triggerFFT;
         bool recording;
-        bool drawing;
         double wave,sample,outputs[2], ifftVal;
         float snippet [SNIPPET_LENGTH] = {0};
         int snippetBufferOffset;

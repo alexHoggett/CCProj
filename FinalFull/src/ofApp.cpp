@@ -38,6 +38,9 @@ void ofApp::setup(){
     // Initialising values
     triggerFFT = false;
     drawing = false;
+    stopDrawing = false;
+    toggleSwitch = true;
+    footSwitch = false;
     snippetBufferOffset = 0;
     columns = sizeof(blocks) / sizeof(blocks[0]);
     rows = sizeof(blocks[0]) / sizeof(blocks[0][0]);
@@ -59,6 +62,8 @@ void ofApp::setup(){
     
     lineGen = new LineGen;
     mistyGen = new MistyBrush;
+    cleanGen = new CleanBrush;
+    largeGen = new LargeBrush;
     snippetsCounter = 0;
 }
 
@@ -72,21 +77,45 @@ void ofApp::update(){
         recording = false;
         snippetBufferOffset = 0;
     }
+    
+    if (frameCountBegin){
+        frameCount++;
+        if (frameCount >= 200){
+            frameCount = 0;
+            frameCountBegin = false;
+            for (int i = 0; i < 14; i++){
+                ofColor c;
+                c.set(ofRandom(255), ofRandom(255), ofRandom(255));
+                mistyGen->addLine({(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, 1000, true, 0.0, c);
+            }
+        }
+    }
+    
+    // update position of mist
+//    for (int i = 0; i < mistyGen->returnTotalLines(); i++){
+//        if (i % 2 == 0){
+//            mistyGen->increasing(i);
+//        } else {
+//            mistyGen->decreasing(i);
+//        }
+//    }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofSetColor(255, 0, 0, 255);
-    
     float rmsThresh = 0.8;
     // I use the RMS to trigger an analysis of what was just played
     if (RMS > rmsThresh && !drawing){
         drawing = true;
     }
     
+    //cout << RMS << endl;
+    
     // FFT IMPLEMENTATION
     // only run the FFT at the end of the recording snippet
     if (triggerFFT){
+        cout << "go go" << endl;
         for (int i = 0; i < SNIPPET_LENGTH - initialBufferSize; i++){
             wave = snippet[i]; //* blackManWin.operator()(SNIPPET_LENGTH, i);
             // get fft
@@ -122,6 +151,7 @@ void ofApp::draw(){
         }
         
         if (drawing && snippets.size() > 2){
+            cout << "drawing" << endl;
             // send bins to chordSpotter to detect a chord
             if (peakFreq != 0){
                 // convert the array of bins to a vector
@@ -132,99 +162,199 @@ void ofApp::draw(){
                 chordSpotter.analyse(fftSize, sampleRate, 8, bins);
 
                 string pred = chordSpotter.returnChord();
-                cout << pred << endl;
+                // cout << pred << endl;
             }
             
-            if (snippets[snippets.size() - 2].drawing == false){
-                // start drawing a new line
-                xyPoint startPoint = {};
-                xyPoint endPoint = {};
-                xyPoint control1 = {};
-                xyPoint control2 = {};
-                xyPoint crescEnd = {};
+            if (toggleSwitch){
+                // state 1
+                if (snippets[snippets.size() - 2].drawing == false){
+                    // start drawing a new line
+                    xyPoint startPoint = {};
+                    xyPoint endPoint = {};
+                    xyPoint control1 = {};
+                    xyPoint control2 = {};
+                    xyPoint crescEnd = {};
+                    
+                    // possibility of drawing line or shape
+                    int prob = ofRandom(100);
+                    bool cresc = false;
+                    if (prob <= 40){
+                        cresc = true;
+                    }
+                    if (centroid < 0.1){
+                        // draw in lower region
+                        startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                        endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
+                    } else {
+                        // draw in upper region
+                        startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                        endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
+                    }
+                    control1 = {(int)ofRandom(width), (int)ofRandom(height)};
+                    control2= {(int)ofRandom(width), (int)ofRandom(height)};
+                    if (cresc){
+                        // drawing a crescent
+                        // currently keeping them small
+                        crescEnd = {startPoint.x + (int)ofRandom(-50, 50), startPoint.y + (int)ofRandom(-50, 50)};
+                    }
+                    
+                    int totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+                    bool squiggle = false;
+                    float orient = ofRandom(1);
+                    ofColor colour;
+                    int colourIndex = ofRandom(colourQuantity);
+                    colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
+                    lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames * 0.7, squiggle, orient, colour);
+                    if(cresc){
+                        lineGen->addCrescent(startPoint, crescEnd, colour);
+                    }
+                }
                 
-                // possibility of drawing line or shape
-                int prob = ofRandom(100);
-                bool cresc = false;
-                if (prob <= 40){
-                    cresc = true;
+                if (snippets[snippets.size() - 2].drawing == true && lineGen->returnTotalLines() > 0){
+                    // already drawing a line
+                    if (snippetsCounter % (snippets.size() / 2) == 0){
+                        // check previous snippets, i dont do this after every snippet
+                        vector <int> peakFreqs;
+                        float avgCentroid = 0;
+                        for (int i = 0; i < snippets.size(); i++){
+                            peakFreqs.push_back(snippets[i].peakFreq);
+                            avgCentroid += snippets[i].centroid;
+                        }
+                        
+                        if (increaseDecrease()){
+                            // pitch is increasing
+                            lineGen->increasing(0);
+                        } else{
+                            // pitch is decreasing
+                            lineGen->decreasing(0);
+                        }
+                        
+                        // calc avg centroid across snippets
+                        avgCentroid /= snippets.size();
+                        
+                        // check if peak freq has been consistent & centroid is averaging high
+                        if (occurenceCheck(peakFreqs, 4) == true && avgCentroid > 0.1){
+                            lineGen->squiggleLine(0);
+                            
+                        }
+                    }
                 }
-                if (centroid < 0.1){
-                    // draw in lower region
-                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
-                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2, height)};
-                } else {
-                    // draw in upper region
-                    startPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
-                    endPoint = {(int)ofRandom(width), (int)ofRandom(height / 2)};
-                }
-                control1 = {(int)ofRandom(width), (int)ofRandom(height)};
-                control2= {(int)ofRandom(width), (int)ofRandom(height)};
-                if (cresc){
-                    // drawing a crescent
-                    // currently keeping them small
-                    crescEnd = {startPoint.x + (int)ofRandom(-50, 50), startPoint.y + (int)ofRandom(-50, 50)};
-                }
-                
-                int totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-                bool squiggle = false;
-                float orient = ofRandom(1);
-                ofColor colour;
-                int colourIndex = ofRandom(colourQuantity);
-                colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
-                lineGen->addLine(startPoint, endPoint, control1, control2, totalFrames, squiggle, orient, colour);
-                if(cresc){
-                    lineGen->addCrescent(startPoint, crescEnd, colour);
+                if (RMS < rmsThresh * 0.4){
+                    stopDrawing = true;
                 }
             }
-            
-            if (snippets[snippets.size() - 2].drawing == true && lineGen->returnTotalLines() > 0){
-                // already drawing a line
-                if (snippetsCounter > snippets.size() / 2){
-                    // check previous snippets, i dont do this after every snippet
-                    int increase = 0;
-                    int decrease = 0;
-                    vector <int> peakFreqs;
-                    float avgCentroid = 0;
-                    for (int i = 0; i < snippets.size(); i++){
-                        if (i != 0){
-                            cout << snippets[i].centroid << endl;
-                            if (snippets[i].centroid > snippets[i - 1].centroid){
-                                increase++;
-                            } else{
-                                decrease++;
+            else {
+                // state 2
+                if (snippets[snippets.size() - 2].drawing == false){
+                    // start drawing something new
+                    // draw first blob
+                    xyPoint control1;
+                    xyPoint control2;
+                    control1 = {(int)ofRandom(width), (int)ofRandom(height)};
+                    control2= {(int)ofRandom(width), (int)ofRandom(height)};
+                    
+                    ofColor colour;
+                    int colourIndex = ofRandom(colourQuantity);
+                    colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
+                    xyPoint startPoint = {(int)(snippets[snippets.size() - 1].peakFreq) % width, (int)ofRandom(height)};
+                    xyPoint endPoint = {(int)ofRandom(width), (int)ofRandom(height)};
+                    
+                    int totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+                    
+                    largeGen->addLine(startPoint, endPoint, control1, control2, totalFrames, 0, ofRandom(1), colour);
+                    
+                    // add a random amount of other blobs, roughly spaced evenly apart
+                    for (int i = 0; i < ofRandom(3); i++){
+                        
+                        colourIndex = ofRandom(colourQuantity);
+                        colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
+                        
+                        control1 = {(int)ofRandom(width), (int)ofRandom(height)};
+                        control2 = {(int)ofRandom(width), (int)ofRandom(height)};
+                        
+                        xyPoint next;
+                        if (i == 0){
+                            next = {(int)ofRandom(width), (int)ofRandom(height)};
+                        } else {
+                            next = {next.x * i % width, next.y * i % height};
+                        }
+                        endPoint = {next.x + (int)ofRandom(-300, 300), next.y + (int)ofRandom(-300, 300)};
+                        totalFrames = ofDist(next.x, next.y, endPoint.x, endPoint.y);
+                        largeGen->addLine(next,
+                                          endPoint,
+                                          control1,
+                                          control2,
+                                          totalFrames,
+                                          0,
+                                          ofRandom(1),
+                                          colour);
+                    }
+                }
+                
+                if(snippets[snippets.size() - 2].drawing == true && largeGen->returnTotalLines() > 0){
+                    // already drawing
+                    if (snippetsCounter % (snippets.size() / 2) == 0){
+                        float freqSum;
+                        for (int i = 0; i < snippets.size(); i++){
+                            freqSum += snippets[i].peakFreq;
+                        }
+                        // take average freq
+                        float avgFreq = freqSum / snippets.size();
+                        
+                        for (int i = 0; i < largeGen->returnTotalLines(); i++){
+                            if (i % 2 == 0){
+                                largeGen->changeLine(i, {i * (int)avgFreq, (i * (int)avgFreq) - height}, {(int)ofRandom(width), (int)ofRandom(height)}, {(int)ofRandom(width), (int)ofRandom(height)});
+                            } else {
+                                if (increaseDecrease()){
+                                    largeGen->increasing(i);
+                                } else{
+                                    largeGen->decreasing(i);
+                                }
                             }
                         }
-                        peakFreqs.push_back(snippets[i].peakFreq);
-                        avgCentroid += snippets[i].centroid;
                     }
                     
-                    if (increase > decrease){
-                        // pitch is increasing
-                        cout << "increasing" << endl;
-                        lineGen->increasing(0);
-                    } else{
-                        cout << "decreasing" << endl;
-                        // pitch is decreasing
-                        lineGen->decreasing(0);
-                    }
-                    
-                    // calc avg centroid across snippets
-                    avgCentroid /= snippets.size();
-                    
-                    // check if peak freq has been consistent & centroid is averaging high
-                    if (occurenceCheck(peakFreqs, 4) == true && avgCentroid > 0.1){
-                        cout << "gotcha" << endl;
-                        lineGen->squiggleLine(0);
+                    // prob of adding stairs
+                    int prob = ofRandom(100);
+                    if (prob < 10){
+                        // draw some stairs
+                        xyPoint startPoint = {(int)ofRandom(width), (int)ofRandom(height)};
+                        xyPoint endPoint = {};
+                        int totalFrames;
+                        
+                        ofColor colour;
+                        int colourIndex = ofRandom(colourQuantity);
+                        colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
+                        
+                        if (increaseDecrease()){
+                            // increasing pitch so ascending stairs
+                            endPoint = {(int)ofRandom(-200, 200), startPoint.y + 150};
+                            totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y) * 1.5;
+                            stairGen.add(startPoint, endPoint, totalFrames, ofRandom(8), ofRandom(1), colour);
+                        } else {
+                            // decreasing so descending stairs
+                            endPoint = {(int)ofRandom(-200, 200), startPoint.y - 150};
+                            totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y) * 3;
+                            stairGen.add(startPoint,endPoint, totalFrames, ofRandom(8), ofRandom(1), colour);
+                        }
                         
                     }
                 }
+                if (RMS < rmsThresh * 0.2){
+                    stopDrawing = true;
+                }
+                
+                
             }
             
-            if (rmsSum < rmsThresh * 0.4){
+            if (stopDrawing){
                 // audio has dropped low enough to cease drawing
                 drawing = false;
                 lineGen->clearAll();
+                // mistyGen->clearAll();
+                largeGen->clearAll();
+                stairGen.clearAll();
+                stopDrawing = false;
             }
         }
         
@@ -233,6 +363,9 @@ void ofApp::draw(){
     }
     mistyGen->run();
     lineGen->run();
+    stairGen.run();
+    cleanGen->run();
+    largeGen->run();
 }
 //--------------------------------------------------------------
 void ofApp::audioIn(ofSoundBuffer& input){
@@ -261,6 +394,33 @@ void ofApp::keyPressed(int key){
             hueValues[i] = rand() % 360;
             saturationValues[i] = rand() % 100;
             brightnessValues[i] = rand() % 100;
+        }
+    }
+    else if (key == '2'){
+        drawing = false;
+        lineGen->clearAll();
+        mistyGen->clearAll();
+        stairGen.clearAll();
+        cleanGen->begin();
+        
+        if (toggleSwitch){
+            frameCount = 0;
+            frameCountBegin = true;
+        } else {
+            mistyGen->clearAll();
+        }
+        
+        toggleSwitch = !toggleSwitch;
+    }
+    else if (key == ' '){
+        drawing = false;
+        lineGen->clearAll();
+        mistyGen->clearAll();
+        stairGen.clearAll();
+        cleanGen->begin();
+        
+        if (toggleSwitch == false){
+            frameCountBegin = true;
         }
     }
 }
@@ -366,3 +526,26 @@ bool ofApp::occurenceCheck(vector<int> &freqs, int thresh){
     }
 }
 
+//--------------------------------------------------------------
+bool ofApp::increaseDecrease(){
+    int increase = 0;
+    int decrease = 0;
+    
+    for (int i = 0; i < snippets.size(); i++){
+        if (i != 0){
+            if (snippets[i].centroid > snippets[i - 1].centroid){
+                increase++;
+            } else{
+                decrease++;
+            }
+        }
+    }
+    
+    if (increase > decrease){
+        // increasing pitch
+        return 1;
+    } else {
+        // decreasing pitch
+        return 0;
+    }
+}

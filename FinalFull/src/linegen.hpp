@@ -66,7 +66,7 @@ class LineGen{
         void killLine(int &index);
         void killCresc(int &index);
         // allow draw to be overridden in inherited classed to allow for different 'drawing patterns'
-        virtual void draw(int x, int y);
+        virtual void draw(int x, int y, ofColor colour);
         xyPoint calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame);
 };
 

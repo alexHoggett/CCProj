@@ -127,10 +127,10 @@ void ChordSpot::analyse(int fftSize, int sampleRate, int octaves, vector<float> 
         prediction[topNotes[i]] =  1;
     }
     
-    for(int i = 0; i < prediction.size(); i++){
-        cout << prediction[i] << " ";
-    }
-    cout << endl;
+//    for(int i = 0; i < prediction.size(); i++){
+//        cout << prediction[i] << " ";
+//    }
+//    cout << endl;
     
     bool match = false;
     for(int i = 0; i < chords.size(); i++){

@@ -1,15 +1,15 @@
-#ifndef mistyBrush_hpp
-#define mistyBrush_hpp
+#ifndef largeBrush_hpp
+#define largeBrush_hpp
 
 #include <stdio.h>
 #include "linegen.hpp"
 
-class MistyBrush : public LineGen {
+class LargeBrush : public LineGen {
     public:
     
     private:
         virtual void draw(int x, int y, ofColor colour);
-    
 };
 
-#endif /* mistyBrush_hpp */
+
+#endif /* largeBrush_hpp */

@@ -2,6 +2,9 @@
 Stairs::Stairs(){
     // empty constructor
     drawing = false;
+    frame = 0;
+    totalFrames = 0;
+    totalLines = 0;
 }
 
 void Stairs::run(){
@@ -40,11 +43,7 @@ void Stairs::run(){
     }
 }
 
-void Stairs::kill(){
-    drawing = false;
-}
-
-void Stairs::add(xyPoint startPoint, xyPoint endPoint, int frames, int noLines, float givenOrient){
+void Stairs::add(xyPoint startPoint, xyPoint endPoint, int frames, int noLines, float givenOrient, ofColor colour_){
     start = startPoint;
     end = endPoint;
     frame = 0;
@@ -52,14 +51,18 @@ void Stairs::add(xyPoint startPoint, xyPoint endPoint, int frames, int noLines, 
     totalLines = noLines;
     drawing = true;
     orient = givenOrient;
+    colour = colour_;
 }
 
 void Stairs::clearAll(){
-    
+    drawing = false;
+    frame = 0;
+    totalFrames = 0;
 }
 
 void Stairs::draw(int x, int y){
-    ofSetColor(255, 255, 255);
+    colour.setBrightness(200);
+    ofSetColor(colour, 100);
     ofDrawEllipse(x, y, 4, 4);
 }
 

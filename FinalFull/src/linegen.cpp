@@ -93,13 +93,11 @@ void LineGen::run(){
             }
         }
         
-        ofSetColor(currentLine->colour, 4);
-        
         // stored current position so that we can change direction from last drawn point
         this->lines[i]->currentPos = {currentPoint.x, currentPoint.y};
         
         // draw at currernt point
-        this->draw(currentPoint.x, currentPoint.y);
+        this->draw(currentPoint.x, currentPoint.y, currentLine->colour);
         // upadte the frame number
         this->lines[i]->currentFrame++;
         
@@ -126,7 +124,7 @@ void LineGen::run(){
             float x, y;
             x = ofLerp(currentPoint1.x, currentPoint2.x, (float)i / dist);
             y = ofLerp(currentPoint1.y, currentPoint2.y, (float)i / dist);
-            ofSetColor(currentCrescent->colour, 4);
+            ofSetColor(currentCrescent->colour, 27);
             // adding a bit of noise so less straight when drawn
             
             ofDrawEllipse(x + ofRandom(-2, 2), y + ofRandom(-2, 2), 5, 5);
@@ -141,9 +139,10 @@ void LineGen::run(){
     
 }
 
-void LineGen::draw(int x, int y){
+void LineGen::draw(int x, int y, ofColor colour){
     // standard draw function, can be overwritten by inherited classes
-    ofDrawEllipse(x, y, ofRandom(20, 30), ofRandom(20, 30));
+    ofSetColor(colour, 20);
+    ofDrawEllipse(x, y, ofRandom(8, 12), ofRandom(8, 12));
 }
 
 xyPoint LineGen::calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame){

@@ -65,6 +65,7 @@ void ofApp::setup(){
     cleanGen = new CleanBrush;
     largeGen = new LargeBrush;
     snippetsCounter = 0;
+    ofEnableAlphaBlending();
 }
 
 //--------------------------------------------------------------
@@ -92,13 +93,15 @@ void ofApp::update(){
     }
     
     // update position of mist
-//    for (int i = 0; i < mistyGen->returnTotalLines(); i++){
-//        if (i % 2 == 0){
-//            mistyGen->increasing(i);
-//        } else {
-//            mistyGen->decreasing(i);
-//        }
-//    }
+    if (frameCountBegin == false && toggleSwitch == true){
+        for (int i = 0; i < mistyGen->returnTotalLines(); i++){
+            if (i % 2 == 0){
+                mistyGen->increasing(i);
+            } else {
+                mistyGen->decreasing(i);
+            }
+        }
+    }
 }
 
 //--------------------------------------------------------------

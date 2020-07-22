@@ -15,3 +15,17 @@ void MistyBrush::draw(int x, int y, ofColor colour){
         ofDrawCircle(x+xOffset, y+yOffset, radius);
     }
 }
+
+void MistyBrush::increasing(int index){
+    xyPoint currentXY = this->lines[index]->currentPos;
+    xyPoint control1 = this->lines[index]->control1;
+    xyPoint control2 = this->lines[index]->control2;
+    this->changeLine(index, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, control1, control2);
+}
+
+void MistyBrush::decreasing(int index){
+    xyPoint currentXY = this->lines[index]->currentPos;
+    xyPoint control1 = this->lines[index]->control1;
+    xyPoint control2 = this->lines[index]->control2;
+    this->changeLine(index, {(int)ofRandom(ofGetWidth()), (int)ofRandom(ofGetHeight())}, control1, control2);
+}

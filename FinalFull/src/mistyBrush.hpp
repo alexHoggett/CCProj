@@ -9,6 +9,8 @@ class MistyBrush : public LineGen {
     
     private:
         virtual void draw(int x, int y, ofColor colour);
+        virtual void increasing(int index);
+        virtual void decreasing(int index);
     
 };
 

@@ -59,8 +59,6 @@ class LineGen{
         void begin();
         
     private:
-        // to store all the lines
-        vector <line*> lines;
         vector <cresc*> crescents;
         // to delete them from the vector
         void killLine(int &index);
@@ -68,6 +66,10 @@ class LineGen{
         // allow draw to be overridden in inherited classed to allow for different 'drawing patterns'
         virtual void draw(int x, int y, ofColor colour);
         xyPoint calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame);
+    
+    protected:
+        // to store all the lines
+        vector <line*> lines;
 };
 
 #endif /* linegen_hpp */

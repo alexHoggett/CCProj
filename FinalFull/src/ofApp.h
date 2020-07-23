@@ -44,6 +44,7 @@ class ofApp : public ofBaseApp{
         ofVec2f whichBlock(float x, float y);
         bool occurenceCheck(vector <int> &freqs, int thresh); // returns true if there are over a certain number of occurences of any element, roughly checking for consistency
         bool increaseDecrease();
+        bool fiftyFifty();
     
         float angles [12] = {PI/6, PI/3, PI/2, PI*2/3, PI*5/6, PI, PI*7/6, PI*4/3, PI*3/2, PI*5/3, PI*11/6, 2*PI};
         int height, width;

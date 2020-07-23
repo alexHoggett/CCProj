@@ -62,6 +62,7 @@ void LineGen::squiggleLine(int index){
 
 void LineGen::clearAll(){
     this->lines.clear();
+    this->crescents.clear();
 }
 
 void LineGen::run(){

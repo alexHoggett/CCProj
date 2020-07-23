@@ -1,6 +1,5 @@
 #include "stairs.hpp"
 Stairs::Stairs(){
-    // empty constructor
     drawing = false;
     frame = 0;
     totalFrames = 0;
@@ -10,7 +9,7 @@ Stairs::Stairs(){
 void Stairs::run(){
     if (drawing){
         // which line is being drawn
-        int line = frame / (totalFrames / totalLines);
+        float line = frame / (totalFrames / totalLines);
         line++; // will now correspond to a value starting from 1 - totalLines
         
         // cout << "line: " << line << endl;
@@ -21,13 +20,13 @@ void Stairs::run(){
         float amt = (float)line / (float)totalLines;
         x = ofLerp(start.x, end.x, amt);
         float yNoise = (ofNoise(line*7*0.1) - 0.5) * 250;
-        y = ofLerp(start.y, end.y, amt) + yNoise;
+        y = ofLerp(start.y, end.y, amt); // + yNoise;
         
         // how far along each line to draw
         amt = frame % (totalFrames / totalLines);
         amt = amt / (totalFrames / totalLines); // 0 - 1
         
-        float mag = (ofNoise(line * 0.1) - 0.5) * 1000;
+        float mag = (ofNoise(line * 0.1) - 0.5) * 500;
         
         // draw the point
         ofVec2f drawPoint = polarToCart(orient * PI, mag * amt);
@@ -47,7 +46,7 @@ void Stairs::add(xyPoint startPoint, xyPoint endPoint, int frames, int noLines, 
     start = startPoint;
     end = endPoint;
     frame = 0;
-    totalFrames = frames;
+    totalFrames = frames/2;
     totalLines = noLines;
     drawing = true;
     orient = givenOrient;
@@ -56,13 +55,11 @@ void Stairs::add(xyPoint startPoint, xyPoint endPoint, int frames, int noLines, 
 
 void Stairs::clearAll(){
     drawing = false;
-    frame = 0;
-    totalFrames = 0;
 }
 
 void Stairs::draw(int x, int y){
     colour.setBrightness(200);
-    ofSetColor(colour, 100);
+    ofSetColor(colour, 60);
     ofDrawEllipse(x, y, 4, 4);
 }
 

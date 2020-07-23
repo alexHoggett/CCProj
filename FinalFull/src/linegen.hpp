@@ -54,8 +54,8 @@ class LineGen{
         void squiggleLine(int index);
         void addCrescent(xyPoint start, xyPoint end, ofColor colour);
         int returnTotalLines(); // return how many lines are currently being drawn
-        void increasing(int index);
-        void decreasing(int index);
+        virtual void increasing(int index);
+        virtual void decreasing(int index);
         void begin();
         
     private:

@@ -92,8 +92,8 @@ void ofApp::update(){
         }
     }
     
-    // update position of mist
-    if (frameCountBegin == false && toggleSwitch == true){
+    if (frameCountBegin == false && snippetsCounter % 50 == 0 && toggleSwitch == false){
+        // update position of mist
         for (int i = 0; i < mistyGen->returnTotalLines(); i++){
             if (i % 2 == 0){
                 mistyGen->increasing(i);
@@ -102,6 +102,8 @@ void ofApp::update(){
             }
         }
     }
+    
+    cout << snippetsCounter << endl;
 }
 
 //--------------------------------------------------------------
@@ -118,7 +120,6 @@ void ofApp::draw(){
     // FFT IMPLEMENTATION
     // only run the FFT at the end of the recording snippet
     if (triggerFFT){
-        cout << "go go" << endl;
         for (int i = 0; i < SNIPPET_LENGTH - initialBufferSize; i++){
             wave = snippet[i]; //* blackManWin.operator()(SNIPPET_LENGTH, i);
             // get fft
@@ -329,16 +330,22 @@ void ofApp::draw(){
                         int colourIndex = ofRandom(colourQuantity);
                         colour.setHsb(ofRandom(hueValues[colourIndex]), saturationValues[colourIndex], brightnessValues[colourIndex]);
                         
+                        if (fiftyFifty()){
+                            endPoint.x = startPoint.x + (ofRandom(100, 200));
+                        } else {
+                            endPoint.x = startPoint.x - (ofRandom(100, 200));
+                        }
+                        
                         if (increaseDecrease()){
                             // increasing pitch so ascending stairs
-                            endPoint = {(int)ofRandom(-200, 200), startPoint.y + 150};
+                            endPoint.y = startPoint.y + 150;
                             totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y) * 1.5;
-                            stairGen.add(startPoint, endPoint, totalFrames, ofRandom(8), ofRandom(1), colour);
+                            stairGen.add(startPoint, endPoint, totalFrames, ofRandom(4, 10), ofRandom(0.4, 0.6), colour);
                         } else {
                             // decreasing so descending stairs
-                            endPoint = {(int)ofRandom(-200, 200), startPoint.y - 150};
+                            endPoint.y = startPoint.y - 150;
                             totalFrames = ofDist(startPoint.x, startPoint.y, endPoint.x, endPoint.y) * 3;
-                            stairGen.add(startPoint,endPoint, totalFrames, ofRandom(8), ofRandom(1), colour);
+                            stairGen.add(startPoint,endPoint, totalFrames, ofRandom(4, 10), ofRandom(0.4, 0.6), colour);
                         }
                         
                     }
@@ -391,6 +398,7 @@ void ofApp::audioIn(ofSoundBuffer& input){
 }
 
 //--------------------------------------------------------------
+
 void ofApp::keyPressed(int key){
     if (key == '1'){
         for(int i = 0; i < colourQuantity; i++){
@@ -550,5 +558,15 @@ bool ofApp::increaseDecrease(){
     } else {
         // decreasing pitch
         return 0;
+    }
+}
+
+//--------------------------------------------------------------
+bool ofApp::fiftyFifty(){
+    float prob = ofRandom(100);
+    if (prob > 50){
+        return true;
+    } else{
+        return false;
     }
 }

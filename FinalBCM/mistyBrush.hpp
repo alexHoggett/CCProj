@@ -5,10 +5,13 @@
 #include "linegen.hpp"
 
 class MistyBrush : public LineGen {
+    
     public:
+        virtual void increasing(int index);
+        virtual void decreasing(int index);
     
     private:
-        virtual void draw(int x, int y);
+        virtual void draw(int x, int y, ofColor colour);
     
 };
 

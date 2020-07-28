@@ -54,19 +54,22 @@ class LineGen{
         void squiggleLine(int index);
         void addCrescent(xyPoint start, xyPoint end, ofColor colour);
         int returnTotalLines(); // return how many lines are currently being drawn
-        void increasing(int index);
-        void decreasing(int index);
+        virtual void increasing(int index);
+        virtual void decreasing(int index);
+        void begin();
         
     private:
-        // to store all the lines
-        vector <line*> lines;
         vector <cresc*> crescents;
         // to delete them from the vector
         void killLine(int &index);
         void killCresc(int &index);
         // allow draw to be overridden in inherited classed to allow for different 'drawing patterns'
-        virtual void draw(int x, int y);
+        virtual void draw(int x, int y, ofColor colour);
         xyPoint calcLinePoint(xyPoint start, xyPoint end, xyPoint control1, xyPoint control2, int totalFrames, int currentFrame);
+    
+    protected:
+        // to store all the lines
+        vector <line*> lines;
 };
 
 #endif /* linegen_hpp */
